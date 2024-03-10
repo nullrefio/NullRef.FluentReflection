@@ -1,20 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace NullRef.FluentReflection;
-
-public class AnalysisType
+namespace NullRef.FluentReflection
 {
-    internal AnalysisType(AnalysisAssembly assemblyInfo)
+    public class AnalysisType
     {
-        Types = assemblyInfo.Assemblies.SelectMany(x => x.GetTypes());
+        internal AnalysisType(AnalysisAssembly assemblyInfo)
+        {
+            Types = assemblyInfo.Assemblies.SelectMany(x => x.GetTypes());
+        }
+
+        internal IEnumerable<System.Type> Types { get; set; }
     }
 
-    internal IEnumerable<System.Type> Types { get; set; }
-}
-
-internal class TypeMap
-{
-    public System.Type Type { get; set; }
-    public bool IsConcrete { get; set; }
+    internal class TypeMap
+    {
+        public System.Type Type { get; set; }
+        public bool IsConcrete { get; set; }
+    }
 }

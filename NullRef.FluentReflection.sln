@@ -3,11 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRef.FluentReflection", "NullRef.FluentReflection\NullRef.FluentReflection.csproj", "{A81DDF0E-B699-45E5-B8C3-C85F2721691A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NullRef.FluentReflection", "NullRef.FluentReflection\NullRef.FluentReflection.csproj", "{A81DDF0E-B699-45E5-B8C3-C85F2721691A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRef.FluentReflection.Tests", "NullRef.FluentReflection.Tests\NullRef.FluentReflection.Tests.csproj", "{043E6491-2D8D-4A18-BDE5-B13694BB64F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NullRef.FluentReflection.Tests", "NullRef.FluentReflection.Tests\NullRef.FluentReflection.Tests.csproj", "{043E6491-2D8D-4A18-BDE5-B13694BB64F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRef.FluentReflection.ModelSample1", "NullRef.FluentReflection.ModelSample1\NullRef.FluentReflection.ModelSample1.csproj", "{63A45D1D-DFB6-4681-97C2-916F8E8CDE43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NullRef.FluentReflection.ModelSample1", "NullRef.FluentReflection.ModelSample1\NullRef.FluentReflection.ModelSample1.csproj", "{63A45D1D-DFB6-4681-97C2-916F8E8CDE43}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{40555E4E-8EC1-45B0-8D5E-152C7031FCD5}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

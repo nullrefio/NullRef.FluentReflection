@@ -1,9 +1,10 @@
 ﻿using System.Reflection;
 
-namespace NullRef.FluentReflection;
-
-public class MatchProperty
+namespace NullRef.FluentReflection
 {
-    public System.Type Type { get; set; }
-    public PropertyInfo Property { get; set; }
+    public class MatchProperty
+    {
+        public System.Type Type { get; set; }
+        public PropertyInfo Property { get; set; }
+    }
 }

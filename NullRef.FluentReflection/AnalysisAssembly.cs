@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Reflection;
 
-namespace NullRef.FluentReflection;
-
-public class AnalysisAssembly
+namespace NullRef.FluentReflection
 {
-    internal AnalysisAssembly() { }
-    internal List<Assembly> Assemblies { get; } = new();
+    public class AnalysisAssembly
+    {
+        internal AnalysisAssembly() { }
+        internal List<Assembly> Assemblies { get; } = new List<Assembly>();
+    }
 }

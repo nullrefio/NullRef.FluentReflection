@@ -1,4 +1,5 @@
-﻿using NullRef.FluentReflection.ModelSample1;
+using NullRef.FluentReflection.ModelSample1;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -10,44 +11,58 @@ namespace NullRef.FluentReflection.Tests
     {
         private Assembly _assembly = typeof(WidgetModel).Assembly;
 
-        //[Fact]
-        //public void MethodReturnTypeTest_Success()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<WidgetService>()
-        //        .Methods()
-        //        .Returns<IReturn>();
+        [Fact]
+        public void MethodReturnTypeTest_Success()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<WidgetService>()
+                .Methods()
+                .Returns<IReturn>()
+                .ToList();
 
-        //    if (result.Errors.Any())
-        //        Assert.Fail("Test failed");
-        //}
+            Assert.Single(result);
+        }
 
-        //[Fact]
-        //public void MethodReturnTypeTest_Fail()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<FailedService>()
-        //        .Methods()
-        //        .Returns<IReturn>();
+        [Fact]
+        public void MethodReturnTypeTest_Fail()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<FailedService>()
+                .Methods()
+                .Returns<IReturn>();
 
-        //    if (!result.Errors.Any())
-        //        Assert.Fail("Test failed");
-        //}
+            var m = result.DoesNotReturnErrors<IReturn>().ErrorMessage;
+            if (!string.IsNullOrEmpty(m))
+                Assert.Fail(m);
+        }
 
-        //[Fact]
-        //public void MethodReturnTaskTypeTest_Success()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<CollateralService>()
-        //        .Methods()
-        //        .ReturnsTask<IReturn>();
+        [Fact]
+        public void MethodReturnTaskTypeTest_Success()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<CollateralService>()
+                .Methods()
+                .ReturnsTask()
+                .ToList();
 
-        //    if (result.Errors.Any())
-        //        Assert.Fail("Test failed");
-        //}
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void MethodReturnTaskOfTypeTest_Success()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<CollateralService>()
+                .Methods()
+                .ReturnsTaskOf<IdValue>()
+                .ToList();
+
+            Assert.Single(result);
+        }
 
         [Fact]
         public void MethodMatchingTest()
@@ -56,76 +71,81 @@ namespace NullRef.FluentReflection.Tests
                .ForAssembly()
                .ForType<WidgetService>()
                .Methods()
-               .Matching());
+               .ToList());
 
             Assert.Single(_assembly
                .ForAssembly()
                .ImplementsType<WidgetService>()
                .Methods()
-               .Matching());
+               .ToList());
 
             Assert.Empty(_assembly
                .ForAssembly()
                .ForType<IWidgetService>()
                .Methods()
-               .Matching());
+               .ToList());
 
             Assert.Single(_assembly
                .ForAssembly()
                .ImplementsType<IWidgetService>()
                .Methods()
-               .Matching());
+               .ToList());
         }
 
-        //[Fact]
-        //public void ModelHasAllRequiredTest()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<ModelAllRequiredAttributes>()
-        //        .Properties()
-        //        .WithAttribute<RequiredAttribute>();
+        [Fact]
+        public void ModelHasAllRequiredTest()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<ModelAllRequiredAttributes>()
+                .Properties()
+                .MissingAttribute<RequiredAttribute>();
 
-        //    Assert.Empty(result.Errors);
-        //}
+            var m = result.PropertyMissingAttributeErrors<RequiredAttribute>().ErrorMessage;
+            if (!string.IsNullOrEmpty(m))
+                Assert.Fail(m);
+        }
 
-        //[Fact]
-        //public void ModelHasNotAllRequiredTest()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<ModelNotAllRequiredAttributes>()
-        //        .Properties()
-        //        .WithAttribute<RequiredAttribute>();
+        [Fact]
+        public void ModelHasNotAllRequiredTest()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<ModelNotAllRequiredAttributes>()
+                .Properties()
+                .MissingAttribute<RequiredAttribute>();
 
-        //    Assert.Single(result.Errors);
-        //}
+            var m = result.PropertyMissingAttributeErrors<RequiredAttribute>();
+            Assert.Single(m.Errors);
+        }
 
-        //[Fact]
-        //public void ModelAllValueTypeRequiredTest_Success()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<ModelValueTypeRequiredAttributes>()
-        //        .Properties()
-        //        .ValueTypes()
-        //        .WithAttribute<RequiredAttribute>();
+        [Fact]
+        public void ModelAllValueTypeRequiredTest_Success()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<ModelValueTypeRequiredAttributes>()
+                .Properties()
+                .ValueTypes()
+                .WithAttribute<RequiredAttribute>()
+                .ToList();
 
-        //    Assert.Empty(result.Errors);
-        //}
+            Assert.Equal(3, result.Length);
+        }
 
-        //[Fact]
-        //public void ModelAllValueTypeRequiredTest_Fail()
-        //{
-        //    var result = _assembly
-        //        .ForAssembly()
-        //        .ForType<ModelValueTypeNotRequiredAttributes>()
-        //        .Properties()
-        //        .ValueTypes()
-        //        .WithAttribute<RequiredAttribute>();
+        [Fact]
+        public void ModelAllValueTypeRequiredTest_Fail()
+        {
+            var result = _assembly
+                .ForAssembly()
+                .ForType<ModelValueTypeNotRequiredAttributes>()
+                .Properties()
+                .ValueTypes()
+                .WithAttribute<RequiredAttribute>()
+                .ToList();
 
-        //    Assert.Single(result.Errors);
-        //}
+            Assert.Equal(2, result.Length);
+        }
 
         [Fact]
         public void PropertyMatchingTest()
@@ -134,7 +154,7 @@ namespace NullRef.FluentReflection.Tests
                 .ForAssembly()
                 .ForType<ModelAllRequiredAttributes>()
                 .Properties()
-                .Matching();
+                .ToList();
 
             Assert.Equal(3, result.Length);
         }
@@ -148,8 +168,8 @@ namespace NullRef.FluentReflection.Tests
                 .Methods()
                 .Parameters();
 
-            Assert.Equal(2, result.Matching().Length);
-            Assert.Single(result.WithAttribute<NotNullAttribute>().Matching());
+            Assert.Equal(2, result.ToList().Length);
+            Assert.Single(result.WithAttribute<NotNullAttribute>().ToList());
         }
 
         [Fact]
@@ -161,7 +181,7 @@ namespace NullRef.FluentReflection.Tests
                 .ForAssembly()
                 .Types()
                 .Abstract(false)
-                .Matching();
+                .ToList();
 
             Assert.Equal(source.Count, result.Length);
         }

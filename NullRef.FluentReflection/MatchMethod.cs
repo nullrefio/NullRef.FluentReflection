@@ -1,9 +1,10 @@
 ﻿using System.Reflection;
 
-namespace NullRef.FluentReflection;
-
-public class MatchMethod
+namespace NullRef.FluentReflection
 {
-    public System.Type Type { get; set; }
-    public MethodInfo Method { get; set; }
+    public class MatchMethod
+    {
+        public System.Type Type { get; set; }
+        public MethodInfo Method { get; set; }
+    }
 }

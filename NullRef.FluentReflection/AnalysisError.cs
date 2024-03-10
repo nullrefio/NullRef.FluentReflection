@@ -1,6 +1,7 @@
-﻿namespace NullRef.FluentReflection;
-
-public class AnalysisError
+﻿namespace NullRef.FluentReflection
 {
-    public string Text { get; set; }
+    public class AnalysisError
+    {
+        public string Text { get; set; }
+    }
 }
