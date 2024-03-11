@@ -138,3 +138,34 @@ public void Test()
 }
 ```
 
+## Ensure all string properties are marked with '[MaxLength]' attribute
+
+```csharp
+[ReadOnly(true)]
+public class WidgetModel : IModel
+{
+    public Guid Id { get; set; }
+    public DateTime ModifiedDate { get; set; }
+    [MaxLength(50)]
+    public string FirstName { get; internal set; }
+    [MaxLength(50)]
+    public string LastName { get; internal set; }
+}
+```
+
+
+```csharp
+[Fact]
+public void Test()
+{
+        var matching = GetAllAssemblies()
+            .ForAssemblies()
+            .ImplementsType<IModel>()
+            .Properties()
+            .OfType<string>()
+            .MissingAttribute<MaxLengthAttribute>()
+            .ToList();
+
+    Assert.Empty(matching);
+}
+```
