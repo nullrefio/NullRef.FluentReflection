@@ -147,9 +147,9 @@ public class WidgetModel : IModel
     public Guid Id { get; set; }
     public DateTime ModifiedDate { get; set; }
     [MaxLength(50)]
-    public string FirstName { get; internal set; }
+    public string FirstName { get; set; }
     [MaxLength(50)]
-    public string LastName { get; internal set; }
+    public string LastName { get; set; }
 }
 ```
 
