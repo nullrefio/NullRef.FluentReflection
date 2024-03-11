@@ -141,7 +141,6 @@ public void Test()
 ## Ensure all string properties are marked with '[MaxLength]' attribute
 
 ```csharp
-[ReadOnly(true)]
 public class WidgetModel : IModel
 {
     public Guid Id { get; set; }
