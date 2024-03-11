@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NullRef.FluentReflection
@@ -11,11 +11,5 @@ namespace NullRef.FluentReflection
         }
 
         internal IEnumerable<System.Type> Types { get; set; }
-    }
-
-    internal class TypeMap
-    {
-        public System.Type Type { get; set; }
-        public bool IsConcrete { get; set; }
     }
 }

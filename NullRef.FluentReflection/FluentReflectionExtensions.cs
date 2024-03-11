@@ -120,7 +120,6 @@ namespace NullRef.FluentReflection
 
         public static AnalysisType DoesNotImplementType<T>(this AnalysisType item)
         {
-            //item.Types = item.Types.Where(x => !typeof(T).IsAssignableFrom(x));
             item.Types = item.Types.Where(x => !typeof(T).IsAssignableFrom(x));
             return item;
         }
@@ -369,6 +368,12 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        public static AnalysisProperty DoesNotImplement<T>(this AnalysisProperty item)
+        {
+            item.Properties = item.Properties.Where(x => !typeof(T).IsAssignableFrom(x.Property.PropertyType));
+            return item;
+        }
+
         public static AnalysisProperty IsEnum(this AnalysisProperty item)
         {
             item.Properties = item.Properties.Where(x => x.Property.PropertyType.IsEnum);
@@ -542,7 +547,7 @@ namespace NullRef.FluentReflection
         private static void ThrowIfNotType<T>(this System.Type[] types)
         {
             var tname = typeof(T).FullName;
-            var typeErrors = types.Where(x => typeof(T).IsAssignableFrom(x)).Select(x => x.FullName).ToList();
+            var typeErrors = types.Where(x => !typeof(T).IsAssignableFrom(x)).Select(x => x.FullName).ToList();
             if (typeErrors.Any())
                 throw new Exception($"The types are not of type {tname}: " + string.Join(", ", typeErrors));
         }

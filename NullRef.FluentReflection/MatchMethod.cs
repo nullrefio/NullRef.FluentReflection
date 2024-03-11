@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 namespace NullRef.FluentReflection
 {
@@ -6,5 +6,6 @@ namespace NullRef.FluentReflection
     {
         public System.Type Type { get; set; }
         public MethodInfo Method { get; set; }
+        public override string ToString() => $"{Type.Name}.{Method.Name}";
     }
 }
