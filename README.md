@@ -1,8 +1,16 @@
 # Fluent Reflection
 
-If you have a class and you want to validate that all Properties are marke with `[Required]` attribute then creaet a unit test to do so.
+Reflection can be daunting for many developers. It provides a way to interact with your code in a very "meta" way but is not like most programming.
+Reflection can be used to look into the nature of code and add checks based on structure. This allows you to add a sort static analysis.
+One way to use reflection is to add code analysis to unit tests and fail a build pipeline based on rule-structure.
+Below are some examples of how to maintain code structure for a project using reflection in an easy to understand way.
+
+## Validate Property Attributes
+
+If you have a class and you want to validate that all Properties are marked with `[Required]` attribute then create a unit test to do so.
 
 ```csharp
+//An example target class
 public class ModelAllRequiredAttributes : IRequiredModel
 {
     [Required]
@@ -14,7 +22,7 @@ public class ModelAllRequiredAttributes : IRequiredModel
 }
 ```
 
-This unit test get all types in all loaded assemblies, filters by a specific type and finds all properties missing the attribute. If there are any, it generates a message to fail the unit test.
+This unit test gets all types in all loaded assemblies, filters by a specific type and finds all properties missing some attribute. If there are any results leftover, it generates a message to fail the unit test.
 
 ```csharp
 [Fact]
@@ -31,8 +39,7 @@ public void Test()
         Assert.Fail(m);
 }
 ```
-
-Validate that all controller methods have been decorated with a `[SwaggerOperation]` attribute.
+## Verify that all controller endpoints have a `[SwaggerOperation]` attribute
 
 ```csharp
 [Fact]
@@ -50,7 +57,9 @@ public void Test()
 }
 ```
 
-Validate that all controllers have an `[HttpMethod]` attribute. This includes `[HttpGet]`, `[HttpPut]`, `[HttpPost]`, `[HttpDelete]`
+## Validate that all controller endpoints have an `[HttpMethod]` attribute.
+
+This includes `[HttpGet]`, `[HttpPut]`, `[HttpPost]`, `[HttpDelete]`
 
 ```csharp
 [Fact]
@@ -67,12 +76,13 @@ public void Test()
     Assert.Empty(matching);
 }
 ```
-Validate that all controller method parameters have been decorated with a `[From]` attribute that defines from where data originates.
+
+## Validate that all controller endpoints have parameters decorated with a `[From...]` attribute that defines from where data originates.
 
 ```csharp
 public class MyController : ControllerBase
 {
-    public Task Create([FromRoute] string id)
+    public Task Create([FromRoute] string id, [FromBody] CreateWidgetModel model)
     {
         return Task.CompletedTask;
     }
@@ -95,3 +105,36 @@ public void Test()
     Assert.Empty(matching);
 }
 ```
+
+## Validate objects marked with [ReadOnly] are actuallly read-only
+
+```csharp
+[ReadOnly(true)]
+public class DocumentModel : IModel
+{
+    public Guid Id { get; internal set; }
+    public DateTime ModifiedDate { get; internal set; }
+    public long Size { get; internal set; }
+    public string FileName { get; internal set; }
+    public string ContentType { get; internal set; }
+}
+```
+
+Searching for all properties that are publically writtable should result in 0 items. All properties should have `internal` or `private` setters.
+
+```csharp
+[Fact]
+public void Test()
+{
+        var matching = GetAllAssemblies()
+            .ForAssemblies()
+            .ImplementsTypes<IModel>()
+            .Properties()
+            .WithAttribute<ReadOnlyAttribute>(x => x.IsReadOnly)
+            .IsWritable(true)
+            .ToList();
+
+    Assert.Empty(matching);
+}
+```
+
