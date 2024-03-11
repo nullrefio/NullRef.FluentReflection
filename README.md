@@ -5,7 +5,7 @@ Reflection can be used to look into the nature of code and add checks based on s
 One way to use reflection is to add code analysis to unit tests and fail a build pipeline based on rule-structure.
 Below are some examples of how to maintain code structure for a project using reflection in an easy to understand way.
 
-## Validate Property Attributes
+### Validate Property Attributes
 
 If you have a class and you want to validate that all Properties are marked with `[Required]` attribute then create a unit test to do so.
 
@@ -39,7 +39,7 @@ public void Test()
         Assert.Fail(m);
 }
 ```
-## Verify that all controller endpoints have a `[SwaggerOperation]` attribute
+### Verify that all controller endpoints have a `[SwaggerOperation]` attribute
 
 ```csharp
 [Fact]
@@ -57,7 +57,7 @@ public void Test()
 }
 ```
 
-## Validate that all controller endpoints have an `[HttpMethod]` attribute.
+### Validate that all controller endpoints have an `[HttpMethod]` attribute.
 
 This includes `[HttpGet]`, `[HttpPut]`, `[HttpPost]`, `[HttpDelete]`
 
@@ -77,7 +77,7 @@ public void Test()
 }
 ```
 
-## Validate that all controller endpoints have parameters decorated with a `[From...]` attribute that defines from where data originates.
+### Validate that all controller endpoints have parameters decorated with a `[From...]` attribute that defines from where data originates.
 
 ```csharp
 public class MyController : ControllerBase
@@ -106,7 +106,7 @@ public void Test()
 }
 ```
 
-## Validate objects marked with [ReadOnly] are actuallly read-only
+### Validate objects marked with [ReadOnly] are actuallly read-only
 
 ```csharp
 [ReadOnly(true)]
@@ -138,7 +138,7 @@ public void Test()
 }
 ```
 
-## Ensure all string properties are marked with '[MaxLength]' attribute
+### Ensure all string properties are marked with '[MaxLength]' attribute
 
 ```csharp
 public class WidgetModel : IModel
