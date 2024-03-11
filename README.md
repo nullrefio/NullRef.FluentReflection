@@ -128,7 +128,7 @@ public void Test()
 {
         var matching = GetAllAssemblies()
             .ForAssemblies()
-            .ImplementsTypes<IModel>()
+            .ImplementsType<IModel>()
             .Properties()
             .WithAttribute<ReadOnlyAttribute>(x => x.IsReadOnly)
             .IsWritable(true)
