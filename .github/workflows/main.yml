@@ -34,8 +34,9 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 7.0.x
-    - name: Build and Pack NuGet package
+    - name: Build package
       run: dotnet build src/NullRef.FluentReflection/NullRef.FluentReflection.csproj -c Release
+    - name: Pack NuGet package
       run: dotnet pack src/NullRef.FluentReflection/NullRef.FluentReflection.csproj -p:Version='${{ steps.gitversion.outputs.SemVer }}' -c Release
     - name: Upload NuGet package to GitHub
       uses: actions/upload-artifact@v2
