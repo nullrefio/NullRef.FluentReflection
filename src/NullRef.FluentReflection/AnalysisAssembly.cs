@@ -3,7 +3,9 @@ using System.Reflection;
 
 namespace NullRef.FluentReflection
 {
-    public class AnalysisAssembly
+    public interface IAnalysisAssembly { }
+
+    internal class AnalysisAssembly : IAnalysisAssembly
     {
         internal AnalysisAssembly() { }
         internal List<Assembly> Assemblies { get; } = new List<Assembly>();

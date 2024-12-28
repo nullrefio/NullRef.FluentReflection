@@ -1,3 +1,4 @@
+using NullRef.FluentReflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,14 +8,14 @@ namespace NullRef.FluentReflection
 {
     public static partial class FluentReflectionExtensions
     {
-        public static AnalysisAssembly ForAssembly(this Assembly assembly)
+        public static IAnalysisAssembly ForAssembly(this Assembly assembly)
         {
             var r = new AnalysisAssembly();
             r.Assemblies.Add(assembly);
             return r;
         }
 
-        public static AnalysisAssembly ForAssemblies(this Assembly[] assemblies)
+        public static IAnalysisAssembly ForAssemblies(this Assembly[] assemblies)
         {
             var r = new AnalysisAssembly();
             r.Assemblies.AddRange(assemblies);
@@ -22,182 +23,387 @@ namespace NullRef.FluentReflection
         }
 
 
+        #region Type
 
-
-
-
-        public static AnalysisType ForType<T>(this AnalysisAssembly item)
+        public static IAnalysisType Is<T>(this IAnalysisAssembly item)
         {
-            var input = new AnalysisType(item);
+            var input = new AnalysisType(item as AnalysisAssembly);
             input.Types = input.Types.Where(x => x == typeof(T));
             return input;
         }
 
-        public static AnalysisType ForTypes(this AnalysisAssembly item, System.Type[] types)
+        public static IAnalysisType AsType(this System.Type item) => new AnalysisType(new[] { item });
+
+        public static IAnalysisType AsType(this IEnumerable<System.Type> items) => new AnalysisType(items);
+
+        public static IAnalysisType IsAny(this IAnalysisAssembly item, System.Type[] types)
         {
-            var input = new AnalysisType(item);
+            var input = new AnalysisType(item as AnalysisAssembly);
             input.Types = input.Types.Where(x => types.Contains(x));
             return input;
         }
 
-        public static AnalysisType ImplementsType<T>(this AnalysisAssembly item)
+        public static IAnalysisType Implements<T>(this IAnalysisAssembly item)
         {
-            var input = new AnalysisType(item);
+            var input = new AnalysisType(item as AnalysisAssembly);
             input.Types = input.Types.Where(x => typeof(T).IsAssignableFrom(x));
             return input;
         }
 
-        public static AnalysisType ImplementsTypes(this AnalysisAssembly item, params System.Type[] types)
+        public static IAnalysisType IsNotAbstract(this IAnalysisType item)
         {
-            var input = new AnalysisType(item);
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => !x.IsAbstract);
+            return item;
+        }
+
+        public static IAnalysisType ImplementsAny(this IAnalysisAssembly item, params System.Type[] types)
+        {
+            var input = new AnalysisType(item as AnalysisAssembly);
             input.Types = input.Types.Where(x => types.Any(z => z.IsAssignableFrom(x)));
             return input;
         }
 
-        public static AnalysisType DoesNotImplementType<T>(this AnalysisAssembly item)
+        public static IAnalysisType DoesNotImplement<T>(this IAnalysisAssembly item)
         {
-            var input = new AnalysisType(item);
+            var input = new AnalysisType(item as AnalysisAssembly);
             input.Types = input.Types.Where(x => !typeof(T).IsAssignableFrom(x));
             return input;
         }
 
-        public static AnalysisType Types(this AnalysisAssembly item)
-        {
-            return new AnalysisType(item);
-        }
+        public static IAnalysisType Types(this IAnalysisAssembly item) => new AnalysisType(item as AnalysisAssembly);
 
-        public static AnalysisType WithAttribute<T>(this AnalysisType item)
+        public static IAnalysisType WithAttribute<T>(this IAnalysisType item)
             where T : System.Attribute
         {
-            item.Types = item.Types.Where(x => x.GetCustomAttribute<T>() != null);
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.GetCustomAttribute<T>() != null);
             return item;
         }
 
-        public static AnalysisType Abstract(this AnalysisType item, bool value)
+        public static IAnalysisType WithAttribute<T>(this IAnalysisType item, Func<T, bool> predicate)
+            where T : System.Attribute
         {
-            item.Types = item.Types.Where(x => x.IsAbstract == value);
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.GetCustomAttributes<T>().Cast<T>().Where(predicate).Any());
             return item;
         }
 
-        public static AnalysisType WithDefaultConstructor(this AnalysisType item)
+        public static IAnalysisType WithAttribute(this IAnalysisType item, System.Type attributeType)
         {
-            item.Types = item.Types.Where(x => x.GetConstructors().Any(z => z.GetParameters().Length == 0));
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.GetCustomAttribute(attributeType) != null);
             return item;
         }
 
-        public static AnalysisType WithOnlyDefaultConstructor(this AnalysisType item)
+        /// <summary>
+        /// Filter to only types that are marked as abstract classes
+        /// </summary>
+        public static IAnalysisType IsAbstract(this IAnalysisType item) => item.IsAbstract(true);
+
+        public static IAnalysisType IsAbstract(this IAnalysisType item, bool value)
         {
-            item.Types = item.Types
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.IsAbstract == value);
+            return item;
+        }
+
+        /// <summary>
+        /// Filter to only types that have a default constructor
+        /// </summary>
+        public static IAnalysisType HasDefaultConstructor(this IAnalysisType item)
+        {
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.GetConstructors().Any(z => z.GetParameters().Length == 0));
+            return item;
+        }
+
+        /// <summary>
+        /// Filter to only types that have a default constructor and no other constructors
+        /// </summary>
+        public static IAnalysisType HasOnlyDefaultConstructor(this IAnalysisType item)
+        {
+            var input = item as AnalysisType;
+            input.Types = input.Types
                 .Where(x => x.GetConstructors().Length == 0 &&
                             x.GetConstructors()
                              .Any(z => z.GetParameters().Length == 0));
             return item;
         }
 
-        public static AnalysisType MissingDefaultConstructor(this AnalysisType item)
+        /// <summary>
+        /// Filter to only types that do not have a default constructor
+        /// </summary>
+        public static IAnalysisType MissingDefaultConstructor(this IAnalysisType item)
         {
-            item.Types = item.Types.Where(x => !x.GetConstructors().Any(z => z.GetParameters().Length == 0));
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => !x.GetConstructors().Any(z => z.GetParameters().Length == 0));
             return item;
         }
 
-        public static AnalysisType NameEndsWith(this AnalysisType item, string str)
+        public static IAnalysisType NameContains(this IAnalysisType item, string str)
         {
-            item.Types = item.Types.Where(x => x.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
             return item;
         }
 
-        public static AnalysisType NameStartsWith(this AnalysisType item, string str)
+        public static IAnalysisType NameStartsWith(this IAnalysisType item, string str)
         {
-            item.Types = item.Types.Where(x => x.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
 
-        public static AnalysisType NameContains(this AnalysisType item, string str)
+        public static IAnalysisType NameEndsWith(this IAnalysisType item, string str)
         {
-            item.Types = item.Types.Where(x => x.Name.ToLower().Contains(str.ToLower()));
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
 
-        public static AnalysisType DoesNotImplementType<T>(this AnalysisType item)
+        public static IAnalysisType NameDoesNotContain(this IAnalysisType item, string str)
         {
-            item.Types = item.Types.Where(x => !typeof(T).IsAssignableFrom(x));
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => !x.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
             return item;
         }
 
-
-
-
-        public static AnalysisMethod Methods(this AnalysisType item)
+        public static IAnalysisType NameDoesNotStartWith(this IAnalysisType item, string str)
         {
-            return new AnalysisMethod(item);
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => !x.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
         }
 
-        public static AnalysisMethod WithAttribute<T>(this AnalysisMethod item)
+        public static IAnalysisType NameDoesNotEndWith(this IAnalysisType item, string str)
+        {
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => !x.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisType DoesNotImplement<T>(this IAnalysisType item)
+        {
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => !typeof(T).IsAssignableFrom(x));
+            return item;
+        }
+
+        public static IAnalysisType Implements<T>(this IAnalysisType item)
+        {
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => typeof(T).IsAssignableFrom(x));
+            return item;
+        }
+
+        #endregion
+
+        #region Constructor
+
+        public static IAnalysisConstructor Constructors(this IAnalysisType item)
+        {
+            return new AnalysisConstructor(item as AnalysisType);
+        }
+
+        public static IAnalysisConstructor DefaultConstructor(this IAnalysisConstructor item)
+        {
+            var input = item as AnalysisConstructor;
+            input.Constructors = input.Constructors.Where(x => x.GetParameters().Length == 0);
+            return item;
+        }
+
+        public static IAnalysisConstructor NonDefaultConstructors(this IAnalysisConstructor item)
+        {
+            var input = item as AnalysisConstructor;
+            input.Constructors = input.Constructors.Where(x => x.GetParameters().Length > 0);
+            return item;
+        }
+
+        public static IAnalysisParameter Parameters(this IAnalysisConstructor item)
+        {
+            return new AnalysisParameter(item as AnalysisConstructor);
+        }
+
+        #endregion
+
+        #region Methods
+        public static IAnalysisMethod Methods(this IAnalysisType item) => item.Methods(BindingFlags.Public);
+        public static IAnalysisMethod Methods(this IAnalysisType item, BindingFlags bindingFlags)
+        {
+            return new AnalysisMethod(item as AnalysisType, bindingFlags);
+        }
+
+        public static IAnalysisMethod WithAttribute<T>(this IAnalysisMethod item)
         where T : System.Attribute
         {
-            item.Methods = item.Methods.Where(x => x.Method.GetCustomAttribute<T>() != null);
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute<T>() != null);
             return item;
         }
 
-        public static AnalysisMethod MissingAttribute<T>(this AnalysisMethod item)
+        public static IAnalysisMethod WithAttribute<T>(this IAnalysisMethod item, Func<T, bool> predicate)
             where T : System.Attribute
         {
-            item.Methods = item.Methods.Where(x => x.Method.GetCustomAttribute<T>() is null);
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttributes<T>().Cast<T>().Where(predicate).Any());
             return item;
         }
 
-        public static AnalysisMethod NameContains(this AnalysisMethod item, string str)
+        public static IAnalysisMethod WithAttribute(this IAnalysisMethod item, System.Type attributeType)
         {
-            item.Methods = item.Methods.Where(x => x.Method.Name.ToLower().Contains(str.ToLower()));
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute(attributeType) != null);
             return item;
         }
 
-        public static AnalysisMethod MissingAttributes(this AnalysisMethod item, params System.Type[] types)
+        public static IAnalysisMethod MissingAttribute<T>(this IAnalysisMethod item)
+            where T : System.Attribute
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute<T>() is null);
+            return item;
+        }
+
+        public static IAnalysisMethod NameContains(this IAnalysisMethod item, string str)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
+            return item;
+        }
+
+        public static IAnalysisMethod NameStartsWith(this IAnalysisMethod item, string str)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisMethod NameEndsWith(this IAnalysisMethod item, string str)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisMethod NameDoesNotContain(this IAnalysisMethod item, string str)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => !x.Method.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
+            return item;
+        }
+
+        public static IAnalysisMethod NameDoesNotStartWith(this IAnalysisMethod item, string str)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => !x.Method.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisMethod NameDoesNotEndWith(this IAnalysisMethod item, string str)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => !x.Method.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisMethod MissingAttributeAll(this IAnalysisMethod item, params System.Type[] types)
         {
             types.ThrowIfNotType<System.Attribute>();
-            item.Methods = item.Methods.Where(x => x.Method.GetCustomAttributes().Select(z => z.GetType()).Intersect(types).Count() == 0);
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttributes().Select(z => z.GetType()).Intersect(types).Count() == 0);
             return item;
         }
 
-        public static AnalysisMethod MissingAttributes<T1, T2>(this AnalysisMethod item)
+        public static IAnalysisMethod MissingAttributeAll<T1, T2>(this IAnalysisMethod item)
             where T1 : System.Attribute
             where T2 : System.Attribute
         {
-            return item.MissingAttributes(typeof(T1), typeof(T2));
+            return item.MissingAttributeAll(typeof(T1), typeof(T2));
         }
 
-        public static AnalysisMethod MissingAttributes<T1, T2, T3>(this AnalysisMethod item)
+        public static IAnalysisMethod MissingAttributeAll<T1, T2, T3>(this IAnalysisMethod item)
             where T1 : System.Attribute
             where T2 : System.Attribute
             where T3 : System.Attribute
         {
-            return item.MissingAttributes(typeof(T1), typeof(T2), typeof(T3));
+            return item.MissingAttributeAll(typeof(T1), typeof(T2), typeof(T3));
         }
 
-
-
-
-
-        public static AnalysisParameter Parameters(this AnalysisMethod item)
+        public static IAnalysisMethod Returns<T>(this IAnalysisMethod item)
         {
-            return new AnalysisParameter(item);
-        }
-
-        public static AnalysisParameter WithAttribute<T>(this AnalysisParameter item)
-        where T : System.Attribute
-        {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() != null);
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => typeof(T).IsAssignableFrom(x.Method.ReturnType));
             return item;
         }
 
-        public static AnalysisParameter WithAnyAttribute<T1, T2, T3, T4, T5>(this AnalysisParameter item)
+        public static IAnalysisMethod DoesNotReturn<T>(this IAnalysisMethod item)
+        {
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => !typeof(T).IsAssignableFrom(x.Method.ReturnType));
+            return item;
+        }
+
+        public static IAnalysisMethod ReturnsTaskOf<T>(this IAnalysisMethod item)
+        {
+            var input = (item as AnalysisMethod);
+            input.Methods = input.Methods.Where(x =>
+                                typeof(System.Threading.Tasks.Task).IsAssignableFrom(x.Method.ReturnType) &&
+                                x.Method.ReturnType.IsGenericType &&
+                                x.Method.ReturnType.GetGenericTypeDefinition() == typeof(System.Threading.Tasks.Task<>) &&
+                                x.Method.ReturnType.GenericTypeArguments.Length == 1 &&
+                                typeof(T).IsAssignableFrom(x.Method.ReturnType.GenericTypeArguments[0]));
+            return input;
+        }
+
+        public static IAnalysisMethod ReturnsTask(this IAnalysisMethod item)
+        {
+            var input = (item as AnalysisMethod);
+            input.Methods = input.Methods.Where(x => typeof(System.Threading.Tasks.Task).IsAssignableFrom(x.Method.ReturnType)).ToList();
+            return input;
+        }
+
+        #endregion
+
+        #region Parameter
+
+        public static IAnalysisParameter Parameters(this IAnalysisMethod item)
+        {
+            return new AnalysisParameter(item as AnalysisMethod);
+        }
+
+        public static IAnalysisParameter WithAttribute<T>(this IAnalysisParameter item)
+        where T : System.Attribute
+        {
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() != null);
+            return item;
+        }
+
+        public static IAnalysisParameter WithAttribute<T>(this IAnalysisParameter item, Func<T, bool> predicate)
+            where T : System.Attribute
+        {
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttributes<T>().Cast<T>().Where(predicate).Any());
+            return item;
+        }
+
+        public static IAnalysisParameter WithAttribute(this IAnalysisParameter item, System.Type attributeType)
+        {
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute(attributeType) != null);
+            return item;
+        }
+
+        public static IAnalysisParameter WithAttributeAny<T1, T2, T3, T4, T5>(this IAnalysisParameter item)
             where T1 : System.Attribute
             where T2 : System.Attribute
             where T3 : System.Attribute
             where T4 : System.Attribute
             where T5 : System.Attribute
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.GetCustomAttribute<T1>() != null ||
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute<T1>() != null ||
                                                          x.Parameter.GetCustomAttribute<T2>() != null ||
                                                          x.Parameter.GetCustomAttribute<T3>() != null ||
                                                          x.Parameter.GetCustomAttribute<T4>() != null ||
@@ -205,29 +411,30 @@ namespace NullRef.FluentReflection
             return item;
         }
 
-        public static AnalysisParameter WithAnyAttribute<T1, T2, T3, T4>(this AnalysisParameter item)
+        public static IAnalysisParameter WithAttributeAny<T1, T2, T3, T4>(this IAnalysisParameter item)
             where T1 : System.Attribute
             where T2 : System.Attribute
             where T3 : System.Attribute
-            where T4 : System.Attribute => item.WithAnyAttribute<T1, T2, T3, T4, T4>();
+            where T4 : System.Attribute => item.WithAttributeAny<T1, T2, T3, T4, T4>();
 
-        public static AnalysisParameter WithAnyAttribute<T1, T2, T3>(this AnalysisParameter item)
+        public static IAnalysisParameter WithAttributeAny<T1, T2, T3>(this IAnalysisParameter item)
             where T1 : System.Attribute
             where T2 : System.Attribute
-            where T3 : System.Attribute => item.WithAnyAttribute<T1, T2, T3, T3, T3>();
+            where T3 : System.Attribute => item.WithAttributeAny<T1, T2, T3, T3, T3>();
 
-        public static AnalysisParameter WithAnyAttribute<T1, T2>(this AnalysisParameter item)
+        public static IAnalysisParameter WithAttributeAny<T1, T2>(this IAnalysisParameter item)
             where T1 : System.Attribute
-            where T2 : System.Attribute => item.WithAnyAttribute<T1, T2, T2, T2, T2>();
+            where T2 : System.Attribute => item.WithAttributeAny<T1, T2, T2, T2, T2>();
 
-        public static AnalysisParameter MissingAllAttributes<T1, T2, T3, T4, T5>(this AnalysisParameter item)
+        public static IAnalysisParameter MissingAttributeAll<T1, T2, T3, T4, T5>(this IAnalysisParameter item)
             where T1 : System.Attribute
             where T2 : System.Attribute
             where T3 : System.Attribute
             where T4 : System.Attribute
             where T5 : System.Attribute
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.GetCustomAttribute<T1>() is null &&
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute<T1>() is null &&
                                                          x.Parameter.GetCustomAttribute<T2>() is null &&
                                                          x.Parameter.GetCustomAttribute<T3>() is null &&
                                                          x.Parameter.GetCustomAttribute<T4>() is null &&
@@ -235,236 +442,427 @@ namespace NullRef.FluentReflection
             return item;
         }
 
-        public static AnalysisParameter MissingAllAttributes<T1, T2, T3, T4>(this AnalysisParameter item)
+        public static IAnalysisParameter MissingAttributeAll<T1, T2, T3, T4>(this IAnalysisParameter item)
             where T1 : System.Attribute
             where T2 : System.Attribute
             where T3 : System.Attribute
-            where T4 : System.Attribute => item.MissingAllAttributes<T1, T2, T3, T4, T4>();
+            where T4 : System.Attribute => item.MissingAttributeAll<T1, T2, T3, T4, T4>();
 
-        public static AnalysisParameter MissingAllAttributes<T1, T2, T3>(this AnalysisParameter item)
+        public static IAnalysisParameter MissingAttributeAll<T1, T2, T3>(this IAnalysisParameter item)
             where T1 : System.Attribute
             where T2 : System.Attribute
-            where T3 : System.Attribute => item.MissingAllAttributes<T1, T2, T3, T3, T3>();
+            where T3 : System.Attribute => item.MissingAttributeAll<T1, T2, T3, T3, T3>();
 
-        public static AnalysisParameter MissingAllAttributes<T1, T2>(this AnalysisParameter item)
+        public static IAnalysisParameter MissingAttributeAll<T1, T2>(this IAnalysisParameter item)
             where T1 : System.Attribute
-            where T2 : System.Attribute => item.MissingAllAttributes<T1, T2, T2, T2, T2>();
+            where T2 : System.Attribute => item.MissingAttributeAll<T1, T2, T2, T2, T2>();
 
-        public static AnalysisParameter MissingAttribute<T>(this AnalysisParameter item)
+        public static IAnalysisParameter MissingAttribute<T>(this IAnalysisParameter item)
             where T : System.Attribute
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() is null);
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() is null);
             return item;
         }
 
-        public static AnalysisParameter OfType<T>(this AnalysisParameter item)
+        public static IAnalysisParameter Is<T>(this IAnalysisParameter item)
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.ParameterType == typeof(T));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType == typeof(T));
             return item;
         }
 
-        public static AnalysisParameter ImplementsType<T>(this AnalysisParameter item)
+        public static IAnalysisParameter Implements<T>(this IAnalysisParameter item)
         {
-            item.Parameters = item.Parameters.Where(x => typeof(T).IsAssignableFrom(x.Parameter.ParameterType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => typeof(T).IsAssignableFrom(x.Parameter.ParameterType));
             return item;
         }
 
-        public static AnalysisParameter NotType<T>(this AnalysisParameter item)
+        public static IAnalysisParameter DoesNotImplement<T>(this IAnalysisParameter item)
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.ParameterType != typeof(T));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => !typeof(T).IsAssignableFrom(x.Parameter.ParameterType));
             return item;
         }
 
-        public static AnalysisParameter NotTypes(this AnalysisParameter item, params System.Type[] types)
+        public static IAnalysisParameter IsNot<T>(this IAnalysisParameter item)
         {
-            item.Parameters = item.Parameters.Where(x => !types.Contains(x.Parameter.ParameterType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType != typeof(T));
             return item;
         }
 
-        public static AnalysisParameter ValueTypes(this AnalysisParameter item)
+        public static IAnalysisParameter IsNotAny(this IAnalysisParameter item, params System.Type[] types)
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.ParameterType.IsValueType);
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => !types.Contains(x.Parameter.ParameterType));
             return item;
         }
 
-        public static AnalysisParameter ReferenceTypes(this AnalysisParameter item)
+        /// <summary>
+        /// Filter to only return value type objects
+        /// </summary>
+        public static IAnalysisParameter ValueTypes(this IAnalysisParameter item)
         {
-            item.Parameters = item.Parameters.Where(x => !x.Parameter.ParameterType.IsValueType);
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType.IsValueType);
             return item;
         }
 
-        public static AnalysisParameter OfTypes(this AnalysisParameter item, params System.Type[] types)
+        /// <summary>
+        /// Filter to only return reference type objects
+        /// </summary>
+        public static IAnalysisParameter ReferenceTypes(this IAnalysisParameter item)
         {
-            item.Parameters = item.Parameters.Where(x => types.Contains(x.Parameter.ParameterType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => !x.Parameter.ParameterType.IsValueType);
             return item;
         }
 
-        public static AnalysisParameter TypeWithAttribute<T>(this AnalysisParameter item)
-            where T : System.Attribute
+        /// <summary>
+        /// Filter parameters of any of the defined specific types
+        /// </summary>
+        public static IAnalysisParameter IsAny(this IAnalysisParameter item, params System.Type[] types)
         {
-            item.Parameters = item.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() != null);
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => types.Contains(x.Parameter.ParameterType));
             return item;
         }
 
-
-
-
-
-        public static AnalysisMethod Returns<T>(this AnalysisMethod item)
+        public static IAnalysisParameter NameContains(this IAnalysisParameter item, string str)
         {
-            item.Methods = item.Methods.Where(x => typeof(T).IsAssignableFrom(x.Method.ReturnType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
             return item;
         }
 
-        public static AnalysisMethod DoesNotReturn<T>(this AnalysisMethod item)
+        public static IAnalysisParameter NameStartsWith(this IAnalysisParameter item, string str)
         {
-            item.Methods = item.Methods.Where(x => !typeof(T).IsAssignableFrom(x.Method.ReturnType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
 
-        public static AnalysisMethod ReturnsTaskOf<T>(this AnalysisMethod item)
+        public static IAnalysisParameter NameEndsWith(this IAnalysisParameter item, string str)
         {
-            var input = (item as AnalysisMethod);
-            input.Methods = input.Methods.Where(x =>
-                                typeof(System.Threading.Tasks.Task).IsAssignableFrom(x.Method.ReturnType) &&
-                                x.Method.ReturnType.IsGenericType &&
-                                x.Method.ReturnType.GetGenericTypeDefinition() == typeof(System.Threading.Tasks.Task<>) &&
-                                typeof(T).IsAssignableFrom(x.Method.ReturnType.GenericTypeArguments[0]));
-            return input;
-        }
-
-        public static AnalysisMethod ReturnsTask(this AnalysisMethod item)
-        {
-            var input = (item as AnalysisMethod);
-            input.Methods = input.Methods.Where(x => typeof(System.Threading.Tasks.Task).IsAssignableFrom(x.Method.ReturnType)).ToList();
-            return input;
-        }
-
-
-
-
-
-
-        public static AnalysisProperty Properties(this AnalysisType item)
-        {
-            return new AnalysisProperty(item);
-        }
-
-        public static AnalysisProperty OfType<T>(this AnalysisProperty item)
-        {
-            item.Properties = item.Properties.Where(x => x.Property.PropertyType == typeof(T));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
 
-        public static AnalysisProperty OfTypes(this AnalysisProperty item, params System.Type[] types)
+        public static IAnalysisParameter NameDoesNotContain(this IAnalysisParameter item, string str)
         {
-            item.Properties = item.Properties.Where(x => types.Contains(x.Property.PropertyType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => !x.Parameter.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
             return item;
         }
 
-        public static AnalysisProperty NotType<T>(this AnalysisProperty item)
+        public static IAnalysisParameter NameDoesNotStartWith(this IAnalysisParameter item, string str)
         {
-            item.Properties = item.Properties.Where(x => x.Property.PropertyType != typeof(T));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => !x.Parameter.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
 
-        public static AnalysisProperty DoesNotImplement<T>(this AnalysisProperty item)
+        public static IAnalysisParameter NameDoesNotEndWith(this IAnalysisParameter item, string str)
         {
-            item.Properties = item.Properties.Where(x => !typeof(T).IsAssignableFrom(x.Property.PropertyType));
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => !x.Parameter.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
 
-        public static AnalysisProperty IsEnum(this AnalysisProperty item)
+        public static IAnalysisParameter IsInterface(this IAnalysisParameter item, bool value = true)
         {
-            item.Properties = item.Properties.Where(x => x.Property.PropertyType.IsEnum);
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Type.IsInterface == value);
             return item;
         }
 
-        public static AnalysisProperty IsWritable(this AnalysisProperty item, bool value)
+        public static IAnalysisType DeclaringTypes(this IAnalysisParameter item)
         {
+            var input = item as AnalysisParameter;
+            return new AnalysisType(input.Parameters.Select(x => x.Parameter.Member.DeclaringType).Distinct());
+        }
+
+        #endregion
+
+        #region Property
+
+        public static IAnalysisProperty Properties(this IAnalysisType item) => item.Properties(BindingFlags.Public);
+        public static IAnalysisProperty Properties(this IAnalysisType item, BindingFlags bindingFlags)
+        {
+            return new AnalysisProperty(item as AnalysisType, bindingFlags);
+        }
+
+        /// <summary>
+        /// Filter properties of a specific type
+        /// </summary>
+        public static IAnalysisProperty Is<T>(this IAnalysisProperty item)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType == typeof(T));
+            return item;
+        }
+
+        /// <summary>
+        /// Filter properties of any of the defined specific types
+        /// </summary>
+        public static IAnalysisProperty IsAny(this IAnalysisProperty item, params System.Type[] types)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => types.Contains(x.Property.PropertyType));
+            return item;
+        }
+
+        public static IAnalysisProperty NotType<T>(this IAnalysisProperty item)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType != typeof(T));
+            return item;
+        }
+
+        public static IAnalysisProperty DoesNotImplement<T>(this IAnalysisProperty item)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => !typeof(T).IsAssignableFrom(x.Property.PropertyType));
+            return item;
+        }
+
+        /// <summary>
+        /// Filter to only return properties that are an Enum type
+        /// </summary>
+        public static IAnalysisProperty IsEnum(this IAnalysisProperty item)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType.IsEnum || x.Property.PropertyType.IsNullableEnum());
+            return item;
+        }
+
+        /// <summary>
+        /// Filter to only return properties that have a public Set method
+        /// </summary>
+        public static IAnalysisProperty IsWritable(this IAnalysisProperty item) => item.IsWritable(true);
+
+        public static IAnalysisProperty IsWritable(this IAnalysisProperty item, bool value)
+        {
+            var input = item as AnalysisProperty;
             if (value)
-                item.Properties = item.Properties.Where(x => x.Property.GetSetMethod() != null);
+                input.Properties = input.Properties.Where(x => x.Property.GetSetMethod() != null);
             else
-                item.Properties = item.Properties.Where(x => x.Property.GetSetMethod() == null);
+                input.Properties = input.Properties.Where(x => x.Property.GetSetMethod() == null);
             return item;
         }
 
-        public static AnalysisProperty ValueTypes(this AnalysisProperty item)
+        /// <summary>
+        /// Filter to only return value type objects
+        /// </summary>
+        public static IAnalysisProperty ValueTypes(this IAnalysisProperty item)
         {
-            item.Properties = item.Properties.Where(x => x.Property.PropertyType.IsValueType);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType.IsValueType);
             return item;
         }
 
-        public static AnalysisProperty ReferenceTypes(this AnalysisProperty item)
+        /// <summary>
+        /// Filter to only return reference type objects
+        /// </summary>
+        public static IAnalysisProperty ReferenceTypes(this IAnalysisProperty item)
         {
-            item.Properties = item.Properties.Where(x => !x.Property.PropertyType.IsValueType);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => !x.Property.PropertyType.IsValueType);
             return item;
         }
 
-        public static AnalysisProperty GenericTypes(this AnalysisProperty item)
+        public static IAnalysisProperty IsVirtual(this IAnalysisProperty item) => item.IsVirtual(true);
+
+        /// <summary>
+        /// Filter to only return properties that have one or both virtual Get or virtual Set methods
+        /// </summary>
+        public static IAnalysisProperty IsVirtual(this IAnalysisProperty item, bool value)
         {
-            item.Properties = item.Properties.Where(x => x.Property.PropertyType.IsGenericType);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => (x.Property.GetGetMethod()?.IsVirtual ?? x.Property.GetSetMethod()?.IsVirtual ?? false) == value);
             return item;
         }
 
-        public static AnalysisProperty TypeWithAttribute<T>(this AnalysisProperty item)
+        public static IAnalysisProperty GenericTypes(this IAnalysisProperty item)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType.IsGenericType);
+            return item;
+        }
+
+        public static IAnalysisProperty WithAttribute<T>(this IAnalysisProperty item)
             where T : System.Attribute
         {
-            item.Properties = item.Properties.Where(x => x.Property.GetCustomAttribute<T>() != null);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttribute<T>() != null);
             return item;
         }
 
-
-
-
-        public static AnalysisProperty WithAttribute<T>(this AnalysisProperty item)
+        public static IAnalysisProperty WithAttribute<T>(this IAnalysisProperty item, Func<T, bool> predicate)
             where T : System.Attribute
         {
-            item.Properties = item.Properties.Where(x => x.Property.GetCustomAttribute<T>() != null);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttributes<T>().Cast<T>().Where(predicate).Any());
             return item;
         }
 
-        public static AnalysisProperty WithAttribute<T>(this AnalysisProperty item, Func<T, bool> predicate)
-            where T : System.Attribute
+        public static IAnalysisProperty WithAttribute(this IAnalysisProperty item, System.Type attributeType)
         {
-            item.Properties = item.Properties
-                .Where(x => x.Property.GetCustomAttributes<T>().Cast<T>().Where(predicate).Any());
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttribute(attributeType) != null);
             return item;
         }
 
-        public static AnalysisProperty MissingAttribute<T>(this AnalysisProperty item)
+        public static IAnalysisProperty MissingAttribute<T>(this IAnalysisProperty item)
            where T : System.Attribute
         {
-            item.Properties = item.Properties.Where(x => x.Property.GetCustomAttribute<T>() is null);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttribute<T>() is null);
             return item;
         }
 
-        public static AnalysisProperty MissingAttributes(this AnalysisProperty item, params System.Type[] types)
+        public static IAnalysisProperty MissingAttributeAll(this IAnalysisProperty item, params System.Type[] types)
         {
-            item.Properties = item.Properties.Where(x => x.Property.GetCustomAttributes().Select(z => z.GetType()).Intersect(types).Count() == 0);
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttributes().Select(z => z.GetType()).Intersect(types).Count() == 0);
             return item;
         }
 
-        public static AnalysisProperty MissingAttributes<T1, T2>(this AnalysisProperty item)
+        public static IAnalysisProperty MissingAttributeAll<T1, T2>(this IAnalysisProperty item)
             where T1 : System.Attribute
             where T2 : System.Attribute
         {
-            return item.MissingAttributes(typeof(T1), typeof(T2));
+            return item.MissingAttributeAll(typeof(T1), typeof(T2));
         }
 
-        public static AnalysisProperty MissingAttributes<T1, T2, T3>(this AnalysisProperty item)
+        public static IAnalysisProperty MissingAttributeAll<T1, T2, T3>(this IAnalysisProperty item)
             where T1 : System.Attribute
             where T2 : System.Attribute
             where T3 : System.Attribute
         {
-            return item.MissingAttributes(typeof(T1), typeof(T2), typeof(T3));
+            return item.MissingAttributeAll(typeof(T1), typeof(T2), typeof(T3));
         }
 
-        public static AnalysisProperty NameIsNot(this AnalysisProperty item, string name)
+        public static IAnalysisProperty NameIsNot(this IAnalysisProperty item, string name)
         {
-            item.Properties = item.Properties.Where(x => !x.Property.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => !x.Property.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
             return item;
         }
+
+        public static IAnalysisProperty NameContains(this IAnalysisProperty item, string str)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
+            return item;
+        }
+
+        public static IAnalysisProperty NameStartsWith(this IAnalysisProperty item, string str)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisProperty NameEndsWith(this IAnalysisProperty item, string str)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisProperty NameDoesNotContain(this IAnalysisProperty item, string str)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => !x.Property.Name.ToLowerInvariant().Contains(str.ToLowerInvariant()));
+            return item;
+        }
+
+        public static IAnalysisProperty NameDoesNotStartWith(this IAnalysisProperty item, string str)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => !x.Property.Name.StartsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisProperty NameDoesNotEndWith(this IAnalysisProperty item, string str)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => !x.Property.Name.EndsWith(str, StringComparison.InvariantCultureIgnoreCase));
+            return item;
+        }
+
+        public static IAnalysisProperty IsNullable(this IAnalysisProperty item, bool value = true)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => (Nullable.GetUnderlyingType(x.Property.PropertyType) != null) == value);
+            return item;
+        }
+
+        #endregion
+
+        #region Fields
+
+        public static IAnalysisField Fields(this IAnalysisType item) => item.Fields(BindingFlags.Public);
+        public static IAnalysisField Fields(this IAnalysisType item, BindingFlags bindingFlags)
+        {
+            return new AnalysisField(item as AnalysisType, bindingFlags);
+        }
+
+        public static IAnalysisConst Consts(this IAnalysisType item) => item.Consts(BindingFlags.Public | BindingFlags.Static);
+        public static IAnalysisConst Consts(this IAnalysisType item, BindingFlags bindingFlags)
+        {
+            return new AnalysisConst(item as AnalysisType, bindingFlags | BindingFlags.Static);
+        }
+
+        /// <summary>
+        /// Filter fields of a specific type
+        /// </summary>
+        public static IAnalysisField Is<T>(this IAnalysisField item)
+        {
+            var input = item as AnalysisField;
+            input.Fields = input.Fields.Where(x => x.Field.FieldType == typeof(T));
+            return item;
+        }
+
+        /// <summary>
+        /// Filter Fields of any of the defined specific types
+        /// </summary>
+        public static IAnalysisField IsAny(this IAnalysisField item, params System.Type[] types)
+        {
+            var input = item as AnalysisField;
+            input.Fields = input.Fields.Where(x => types.Contains(x.Field.FieldType));
+            return item;
+        }
+
+        public static IAnalysisField NotType<T>(this IAnalysisField item)
+        {
+            var input = item as AnalysisField;
+            input.Fields = input.Fields.Where(x => x.Field.FieldType != typeof(T));
+            return item;
+        }
+
+        public static IAnalysisField DoesNotImplement<T>(this IAnalysisField item)
+        {
+            var input = item as AnalysisField;
+            input.Fields = input.Fields.Where(x => !typeof(T).IsAssignableFrom(x.Field.FieldType));
+            return item;
+        }
+
+        /// <summary>
+        /// Filter to only return Fields that are an Enum type
+        /// </summary>
+        public static IAnalysisField IsEnum(this IAnalysisField item)
+        {
+            var input = item as AnalysisField;
+            input.Fields = input.Fields.Where(x => x.Field.FieldType.IsEnum || x.Field.FieldType.IsNullableEnum());
+            return item;
+        }
+
+        #endregion
 
         /// <summary>
         /// Get all assemblies in AppDomain
@@ -506,40 +904,63 @@ namespace NullRef.FluentReflection
 
     partial class FluentReflectionExtensions
     {
-        public static System.Type[] ToList(this AnalysisType item)
+        public static System.Type[] ToArray(this IAnalysisType item)
         {
             return (item as AnalysisType).Types.ToArray();
         }
 
-        public static MatchParameter[] ToList(this AnalysisParameter item)
+        public static MatchParameter[] ToArray(this IAnalysisParameter item)
         {
             return (item as AnalysisParameter).Parameters.ToArray();
         }
 
-        public static MatchMethod[] ToList(this AnalysisMethod item)
+        public static MatchMethod[] ToArray(this IAnalysisMethod item)
         {
             return (item as AnalysisMethod).Methods.ToArray();
         }
 
-        public static MatchProperty[] ToList(this AnalysisProperty item)
+        public static MatchProperty[] ToArray(this IAnalysisProperty item)
         {
             return (item as AnalysisProperty).Properties.ToArray();
         }
 
-        public static AnalysisValidateResult DoesNotReturnErrors<T>(this AnalysisMethod item)
+        public static MatchField[] ToArray(this IAnalysisField item)
         {
+            return (item as AnalysisField).Fields.ToArray();
+        }
+
+        public static MatchConstValue<T>[] Values<T>(this IAnalysisConst item)
+        {
+            var retval = new List<MatchConstValue<T>>();
+            var list = (item as AnalysisField).Fields.ToList();
+            foreach (var el in list.Where(x => typeof(T).IsAssignableFrom(x.Field.FieldType)))
+            {
+                retval.Add(new MatchConstValue<T>
+                {
+                    Field = el.Field,
+                    Type = el.Type,
+                    Value = (T)el.Field.GetValue(null),
+                });
+            }
+            return retval.ToArray();
+        }
+
+        public static AnalysisValidateResult DoesNotReturnErrors<T>(this IAnalysisMethod item)
+        {
+            var input = item as AnalysisMethod;
             var r = new AnalysisValidateResult
             {
-                Errors = item.Methods.Select(x => new AnalysisError { Text = $"The method {x.Type.Name}.{x.Method.Name} does not return {typeof(T).Name}" }).ToList(),
+                Errors = input.Methods.Select(x => new AnalysisError { Text = $"The method {x.Type.Name}.{x.Method.Name} does not return {typeof(T).Name}" }).ToList(),
             };
             return r;
         }
 
-        public static AnalysisValidateResult PropertyMissingAttributeErrors<T>(this AnalysisProperty item)
+        public static AnalysisValidateResult PropertyMissingAttributeErrors<T>(this IAnalysisProperty item)
         {
+            var input = item as AnalysisProperty;
             var r = new AnalysisValidateResult
             {
-                Errors = item.Properties.Select(x => new AnalysisError { Text = $"The property {x.Type.Name}.{x.Property.Name} is missing attribute {typeof(T).Name}" }).ToList(),
+                Errors = input.Properties.Select(x => new AnalysisError { Text = $"The property {x.Type.Name}.{x.Property.Name} is missing attribute {typeof(T).Name}" }).ToList(),
             };
             return r;
         }
@@ -551,5 +972,7 @@ namespace NullRef.FluentReflection
             if (typeErrors.Any())
                 throw new Exception($"The types are not of type {tname}: " + string.Join(", ", typeErrors));
         }
+
+        public static bool IsNullableEnum(this Type t) => Nullable.GetUnderlyingType(t)?.IsEnum ?? false;
     }
 }

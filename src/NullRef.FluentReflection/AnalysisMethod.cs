@@ -4,14 +4,18 @@ using System.Reflection;
 
 namespace NullRef.FluentReflection
 {
-    public class AnalysisMethod
+    public interface IAnalysisMethod { }
+
+    internal class AnalysisMethod : IAnalysisMethod
     {
-        internal AnalysisMethod(AnalysisType item)
+        internal AnalysisMethod(AnalysisType item) : this(item, BindingFlags.Public) { }
+
+        internal AnalysisMethod(AnalysisType item, BindingFlags bindingFlags)
         {
             var ignore = new string[] { nameof(item.GetType), nameof(item.Equals), nameof(item.ToString), nameof(item.GetHashCode) };
 
             Methods = item.Types
-                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .SelectMany(t => t.GetMethods(bindingFlags | BindingFlags.Instance)
                 .Where(x => !ignore.Contains(x.Name))
                 .Select(x => new MatchMethod { Type = t, Method = x }));
         }

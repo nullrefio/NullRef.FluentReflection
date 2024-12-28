@@ -1,4 +1,4 @@
-﻿namespace NullRef.FluentReflection
+namespace NullRef.FluentReflection
 {
     public class AnalysisError
     {

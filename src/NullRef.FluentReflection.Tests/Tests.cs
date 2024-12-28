@@ -5,185 +5,184 @@ using System.Linq;
 using System.Reflection;
 using Xunit;
 
-namespace NullRef.FluentReflection.Tests
+namespace NullRef.FluentReflection.Tests;
+
+public class Tests
 {
-    public class Tests
+    private Assembly _assembly = typeof(WidgetModel).Assembly;
+
+    [Fact]
+    public void MethodReturnTypeTest_Success()
     {
-        private Assembly _assembly = typeof(WidgetModel).Assembly;
+        var result = _assembly
+            .ForAssembly()
+            .Is<WidgetService>()
+            .Methods()
+            .Returns<IReturn>()
+            .ToArray();
 
-        [Fact]
-        public void MethodReturnTypeTest_Success()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<WidgetService>()
-                .Methods()
-                .Returns<IReturn>()
-                .ToList();
+        Assert.Single(result);
+    }
 
-            Assert.Single(result);
-        }
+    [Fact]
+    public void MethodReturnTypeTest_Fail()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<FailedService>()
+            .Methods()
+            .Returns<IReturn>();
 
-        [Fact]
-        public void MethodReturnTypeTest_Fail()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<FailedService>()
-                .Methods()
-                .Returns<IReturn>();
+        var m = result.DoesNotReturnErrors<IReturn>().ErrorMessage;
+        if (!string.IsNullOrEmpty(m))
+            Assert.Fail(m);
+    }
 
-            var m = result.DoesNotReturnErrors<IReturn>().ErrorMessage;
-            if (!string.IsNullOrEmpty(m))
-                Assert.Fail(m);
-        }
+    [Fact]
+    public void MethodReturnTaskTypeTest_Success()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<CollateralService>()
+            .Methods()
+            .ReturnsTask()
+            .ToArray();
 
-        [Fact]
-        public void MethodReturnTaskTypeTest_Success()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<CollateralService>()
-                .Methods()
-                .ReturnsTask()
-                .ToList();
+        Assert.Single(result);
+    }
 
-            Assert.Single(result);
-        }
+    [Fact]
+    public void MethodReturnTaskOfTypeTest_Success()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<CollateralService>()
+            .Methods()
+            .ReturnsTaskOf<IdValue>()
+            .ToArray();
 
-        [Fact]
-        public void MethodReturnTaskOfTypeTest_Success()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<CollateralService>()
-                .Methods()
-                .ReturnsTaskOf<IdValue>()
-                .ToList();
+        Assert.Single(result);
+    }
 
-            Assert.Single(result);
-        }
+    [Fact]
+    public void MethodMatchingTest()
+    {
+        Assert.Single(_assembly
+           .ForAssembly()
+           .Is<WidgetService>()
+           .Methods()
+           .ToArray());
 
-        [Fact]
-        public void MethodMatchingTest()
-        {
-            Assert.Single(_assembly
-               .ForAssembly()
-               .ForType<WidgetService>()
-               .Methods()
-               .ToList());
+        Assert.Single(_assembly
+           .ForAssembly()
+           .Implements<WidgetService>()
+           .Methods()
+           .ToArray());
 
-            Assert.Single(_assembly
-               .ForAssembly()
-               .ImplementsType<WidgetService>()
-               .Methods()
-               .ToList());
+        Assert.Empty(_assembly
+           .ForAssembly()
+           .Is<IWidgetService>()
+           .Methods()
+           .ToArray());
 
-            Assert.Empty(_assembly
-               .ForAssembly()
-               .ForType<IWidgetService>()
-               .Methods()
-               .ToList());
+        Assert.Single(_assembly
+           .ForAssembly()
+           .Implements<IWidgetService>()
+           .Methods()
+           .ToArray());
+    }
 
-            Assert.Single(_assembly
-               .ForAssembly()
-               .ImplementsType<IWidgetService>()
-               .Methods()
-               .ToList());
-        }
+    [Fact]
+    public void ModelHasAllRequiredTest()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<ModelAllRequiredAttributes>()
+            .Properties()
+            .MissingAttribute<RequiredAttribute>();
 
-        [Fact]
-        public void ModelHasAllRequiredTest()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<ModelAllRequiredAttributes>()
-                .Properties()
-                .MissingAttribute<RequiredAttribute>();
+        var m = result.PropertyMissingAttributeErrors<RequiredAttribute>().ErrorMessage;
+        if (!string.IsNullOrEmpty(m))
+            Assert.Fail(m);
+    }
 
-            var m = result.PropertyMissingAttributeErrors<RequiredAttribute>().ErrorMessage;
-            if (!string.IsNullOrEmpty(m))
-                Assert.Fail(m);
-        }
+    [Fact]
+    public void ModelHasNotAllRequiredTest()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<ModelNotAllRequiredAttributes>()
+            .Properties()
+            .MissingAttribute<RequiredAttribute>();
 
-        [Fact]
-        public void ModelHasNotAllRequiredTest()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<ModelNotAllRequiredAttributes>()
-                .Properties()
-                .MissingAttribute<RequiredAttribute>();
+        var m = result.PropertyMissingAttributeErrors<RequiredAttribute>();
+        Assert.Single(m.Errors);
+    }
 
-            var m = result.PropertyMissingAttributeErrors<RequiredAttribute>();
-            Assert.Single(m.Errors);
-        }
+    [Fact]
+    public void ModelAllValueTypeRequiredTest_Success()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<ModelValueTypeRequiredAttributes>()
+            .Properties()
+            .ValueTypes()
+            .WithAttribute<RequiredAttribute>()
+            .ToArray();
 
-        [Fact]
-        public void ModelAllValueTypeRequiredTest_Success()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<ModelValueTypeRequiredAttributes>()
-                .Properties()
-                .ValueTypes()
-                .WithAttribute<RequiredAttribute>()
-                .ToList();
+        Assert.Equal(3, result.Length);
+    }
 
-            Assert.Equal(3, result.Length);
-        }
+    [Fact]
+    public void ModelAllValueTypeRequiredTest_Fail()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<ModelValueTypeNotRequiredAttributes>()
+            .Properties()
+            .ValueTypes()
+            .WithAttribute<RequiredAttribute>()
+            .ToArray();
 
-        [Fact]
-        public void ModelAllValueTypeRequiredTest_Fail()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<ModelValueTypeNotRequiredAttributes>()
-                .Properties()
-                .ValueTypes()
-                .WithAttribute<RequiredAttribute>()
-                .ToList();
+        Assert.Equal(2, result.Length);
+    }
 
-            Assert.Equal(2, result.Length);
-        }
+    [Fact]
+    public void PropertyMatchingTest()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<ModelAllRequiredAttributes>()
+            .Properties()
+            .ToArray();
 
-        [Fact]
-        public void PropertyMatchingTest()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<ModelAllRequiredAttributes>()
-                .Properties()
-                .ToList();
+        Assert.Equal(3, result.Length);
+    }
 
-            Assert.Equal(3, result.Length);
-        }
+    [Fact]
+    public void MethodParameterTest()
+    {
+        var result = _assembly
+            .ForAssembly()
+            .Is<ObjectServiceWithParamWithAttributes>()
+            .Methods()
+            .Parameters();
 
-        [Fact]
-        public void MethodParameterTest()
-        {
-            var result = _assembly
-                .ForAssembly()
-                .ForType<ObjectServiceWithParamWithAttributes>()
-                .Methods()
-                .Parameters();
+        Assert.Equal(2, result.ToArray().Length);
+        Assert.Single(result.WithAttribute<NotNullAttribute>().ToArray());
+    }
 
-            Assert.Equal(2, result.ToList().Length);
-            Assert.Single(result.WithAttribute<NotNullAttribute>().ToList());
-        }
+    [Fact]
+    public void NonAbstractTypesTest()
+    {
+        var source = _assembly.GetTypes().Where(x => !x.IsAbstract).ToList();
 
-        [Fact]
-        public void NonAbstractTypesTest()
-        {
-            var source = _assembly.GetTypes().Where(x => !x.IsAbstract).ToList();
+        var result = _assembly
+            .ForAssembly()
+            .Types()
+            .IsAbstract(false)
+            .ToArray();
 
-            var result = _assembly
-                .ForAssembly()
-                .Types()
-                .Abstract(false)
-                .ToList();
-
-            Assert.Equal(source.Count, result.Length);
-        }
+        Assert.Equal(source.Count, result.Length);
     }
 }
