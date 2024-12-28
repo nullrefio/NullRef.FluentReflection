@@ -34,6 +34,8 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 8.0.x
+    - name: Build clean
+      run: dotnet clean src/NullRef.FluentReflection/NullRef.FluentReflection.csproj -c Release
     - name: Build package
       run: dotnet build src/NullRef.FluentReflection/NullRef.FluentReflection.csproj -c Release
     - name: Pack NuGet package
@@ -61,7 +63,7 @@ jobs:
       run: ls
     - name: Push package to GitHub packages 
       if: needs.build.outputs.CommitsSinceVersionSource > 0 #Only release if there has been a commit/version change  
-      run: dotnet nuget push nugetPackage/*.nupkg --api-key ${{ secrets.NUGET_PACKAGE_TOKEN }}  --source "github"
+      run: dotnet nuget push *.nupkg --api-key ${{ secrets.NUGET_PACKAGE_TOKEN }}  --source "github"
     
     #Create release
     - name: Create Release
