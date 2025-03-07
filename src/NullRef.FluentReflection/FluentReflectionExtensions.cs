@@ -26,9 +26,12 @@ namespace NullRef.FluentReflection
         #region Type
 
         public static IAnalysisType Is<T>(this IAnalysisAssembly item)
+            => item.Is(typeof(T));
+
+        public static IAnalysisType Is(this IAnalysisAssembly item, System.Type type)
         {
             var input = new AnalysisType(item as AnalysisAssembly);
-            input.Types = input.Types.Where(x => x == typeof(T));
+            input.Types = input.Types.Where(x => x == type);
             return input;
         }
 
@@ -44,9 +47,12 @@ namespace NullRef.FluentReflection
         }
 
         public static IAnalysisType Implements<T>(this IAnalysisAssembly item)
+            => item.Implements(typeof(T));
+
+        public static IAnalysisType Implements(this IAnalysisAssembly item, System.Type type)
         {
             var input = new AnalysisType(item as AnalysisAssembly);
-            input.Types = input.Types.Where(x => typeof(T).IsAssignableFrom(x));
+            input.Types = input.Types.Where(x => type.IsAssignableFrom(x));
             return input;
         }
 
@@ -65,21 +71,16 @@ namespace NullRef.FluentReflection
         }
 
         public static IAnalysisType DoesNotImplement<T>(this IAnalysisAssembly item)
+            => item.DoesNotImplement(typeof(T));
+
+        public static IAnalysisType DoesNotImplement(this IAnalysisAssembly item, System.Type type)
         {
             var input = new AnalysisType(item as AnalysisAssembly);
-            input.Types = input.Types.Where(x => !typeof(T).IsAssignableFrom(x));
+            input.Types = input.Types.Where(x => !type.IsAssignableFrom(x));
             return input;
         }
 
         public static IAnalysisType Types(this IAnalysisAssembly item) => new AnalysisType(item as AnalysisAssembly);
-
-        public static IAnalysisType WithAttribute<T>(this IAnalysisType item)
-            where T : System.Attribute
-        {
-            var input = item as AnalysisType;
-            input.Types = input.Types.Where(x => x.GetCustomAttribute<T>() != null);
-            return item;
-        }
 
         public static IAnalysisType WithAttribute<T>(this IAnalysisType item, Func<T, bool> predicate)
             where T : System.Attribute
@@ -89,8 +90,12 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        public static IAnalysisType WithAttribute<T>(this IAnalysisType item)
+            where T : System.Attribute => item.WithAttribute(typeof(T));
+
         public static IAnalysisType WithAttribute(this IAnalysisType item, System.Type attributeType)
         {
+            attributeType.ThrowIfNotAttribute();
             var input = item as AnalysisType;
             input.Types = input.Types.Where(x => x.GetCustomAttribute(attributeType) != null);
             return item;
@@ -101,6 +106,9 @@ namespace NullRef.FluentReflection
         /// </summary>
         public static IAnalysisType IsAbstract(this IAnalysisType item) => item.IsAbstract(true);
 
+        /// <summary>
+        /// Filter to only types that are marked as abstract or not based on the specified parameter
+        /// </summary>
         public static IAnalysisType IsAbstract(this IAnalysisType item, bool value)
         {
             var input = item as AnalysisType;
@@ -141,6 +149,19 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types with an exact name
+        /// </summary>
+        public static IAnalysisType NameIs(this IAnalysisType item, string str)
+        {
+            var input = item as AnalysisType;
+            input.Types = input.Types.Where(x => x.Name == str);
+            return item;
+        }
+
+        /// <summary>
+        /// Match types with names that contains a sub-string.
+        /// </summary>
         public static IAnalysisType NameContains(this IAnalysisType item, string str)
         {
             var input = item as AnalysisType;
@@ -148,6 +169,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types with names that start with a sub-string.
+        /// </summary>
         public static IAnalysisType NameStartsWith(this IAnalysisType item, string str)
         {
             var input = item as AnalysisType;
@@ -155,6 +179,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types with names that end with a sub-string.
+        /// </summary>
         public static IAnalysisType NameEndsWith(this IAnalysisType item, string str)
         {
             var input = item as AnalysisType;
@@ -162,6 +189,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types with names that do not contain a sub-string.
+        /// </summary>
         public static IAnalysisType NameDoesNotContain(this IAnalysisType item, string str)
         {
             var input = item as AnalysisType;
@@ -169,6 +199,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types with names that do not start with a sub-string.
+        /// </summary>
         public static IAnalysisType NameDoesNotStartWith(this IAnalysisType item, string str)
         {
             var input = item as AnalysisType;
@@ -176,6 +209,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types with names that do not end with a sub-string.
+        /// </summary>
         public static IAnalysisType NameDoesNotEndWith(this IAnalysisType item, string str)
         {
             var input = item as AnalysisType;
@@ -183,17 +219,35 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match types that do not implement the specified type
+        /// </summary>
         public static IAnalysisType DoesNotImplement<T>(this IAnalysisType item)
+            => item.DoesNotImplement(typeof(T));
+
+        /// <summary>
+        /// Match types that do not implement the specified type
+        /// </summary>
+        public static IAnalysisType DoesNotImplement(this IAnalysisType item, System.Type type)
         {
             var input = item as AnalysisType;
-            input.Types = input.Types.Where(x => !typeof(T).IsAssignableFrom(x));
+            input.Types = input.Types.Where(x => !type.IsAssignableFrom(x));
             return item;
         }
 
+        /// <summary>
+        /// Match types that do implement a specified type
+        /// </summary>
         public static IAnalysisType Implements<T>(this IAnalysisType item)
+            => item.Implements(typeof(T));
+
+        /// <summary>
+        /// Match types that do implement a specified type
+        /// </summary>
+        public static IAnalysisType Implements(this IAnalysisType item, System.Type type)
         {
             var input = item as AnalysisType;
-            input.Types = input.Types.Where(x => typeof(T).IsAssignableFrom(x));
+            input.Types = input.Types.Where(x => type.IsAssignableFrom(x));
             return item;
         }
 
@@ -201,11 +255,17 @@ namespace NullRef.FluentReflection
 
         #region Constructor
 
+        /// <summary>
+        /// Return all constructors for filtered types
+        /// </summary>
         public static IAnalysisConstructor Constructors(this IAnalysisType item)
         {
             return new AnalysisConstructor(item as AnalysisType);
         }
 
+        /// <summary>
+        /// Return all default constructors with no parameters for filtered types
+        /// </summary>
         public static IAnalysisConstructor DefaultConstructor(this IAnalysisConstructor item)
         {
             var input = item as AnalysisConstructor;
@@ -213,6 +273,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Return all non-default constructors for filtered types
+        /// </summary>
         public static IAnalysisConstructor NonDefaultConstructors(this IAnalysisConstructor item)
         {
             var input = item as AnalysisConstructor;
@@ -220,6 +283,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Return parameters for filtered constructors
+        /// </summary>
         public static IAnalysisParameter Parameters(this IAnalysisConstructor item)
         {
             return new AnalysisParameter(item as AnalysisConstructor);
@@ -229,17 +295,10 @@ namespace NullRef.FluentReflection
 
         #region Methods
         public static IAnalysisMethod Methods(this IAnalysisType item) => item.Methods(BindingFlags.Public);
+
         public static IAnalysisMethod Methods(this IAnalysisType item, BindingFlags bindingFlags)
         {
             return new AnalysisMethod(item as AnalysisType, bindingFlags);
-        }
-
-        public static IAnalysisMethod WithAttribute<T>(this IAnalysisMethod item)
-        where T : System.Attribute
-        {
-            var input = item as AnalysisMethod;
-            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute<T>() != null);
-            return item;
         }
 
         public static IAnalysisMethod WithAttribute<T>(this IAnalysisMethod item, Func<T, bool> predicate)
@@ -250,18 +309,35 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        public static IAnalysisMethod WithAttribute<T>(this IAnalysisMethod item)
+            where T : System.Attribute => item.WithAttribute(typeof(T));
+
         public static IAnalysisMethod WithAttribute(this IAnalysisMethod item, System.Type attributeType)
         {
+            attributeType.ThrowIfNotAttribute();
             var input = item as AnalysisMethod;
             input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute(attributeType) != null);
             return item;
         }
 
         public static IAnalysisMethod MissingAttribute<T>(this IAnalysisMethod item)
-            where T : System.Attribute
+            where T : System.Attribute => item.MissingAttribute(typeof(T));
+
+        public static IAnalysisMethod MissingAttribute(this IAnalysisMethod item, System.Type attributeType)
+        {
+            attributeType.ThrowIfNotAttribute();
+            var input = item as AnalysisMethod;
+            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute(attributeType) is null);
+            return item;
+        }
+
+        /// <summary>
+        /// Match methods with an exact name
+        /// </summary>
+        public static IAnalysisMethod NameIs(this IAnalysisMethod item, string str)
         {
             var input = item as AnalysisMethod;
-            input.Methods = input.Methods.Where(x => x.Method.GetCustomAttribute<T>() is null);
+            input.Methods = input.Methods.Where(x => x.Method.Name == str);
             return item;
         }
 
@@ -272,6 +348,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match methods with names that start with a sub-string.
+        /// </summary>
         public static IAnalysisMethod NameStartsWith(this IAnalysisMethod item, string str)
         {
             var input = item as AnalysisMethod;
@@ -279,6 +358,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match methods with names that end with a sub-string.
+        /// </summary>
         public static IAnalysisMethod NameEndsWith(this IAnalysisMethod item, string str)
         {
             var input = item as AnalysisMethod;
@@ -286,6 +368,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match methods with names that do not contain a sub-string.
+        /// </summary>
         public static IAnalysisMethod NameDoesNotContain(this IAnalysisMethod item, string str)
         {
             var input = item as AnalysisMethod;
@@ -293,6 +378,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match methods with names that do not start with a sub-string.
+        /// </summary>
         public static IAnalysisMethod NameDoesNotStartWith(this IAnalysisMethod item, string str)
         {
             var input = item as AnalysisMethod;
@@ -300,6 +388,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match methods with names that do not end with a sub-string.
+        /// </summary>
         public static IAnalysisMethod NameDoesNotEndWith(this IAnalysisMethod item, string str)
         {
             var input = item as AnalysisMethod;
@@ -307,9 +398,12 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match methods that do not have any attributes in the specified type list
+        /// </summary>
         public static IAnalysisMethod MissingAttributeAll(this IAnalysisMethod item, params System.Type[] types)
         {
-            types.ThrowIfNotType<System.Attribute>();
+            types.ToList().ForEach(x => x.ThrowIfNotAttribute());
             var input = item as AnalysisMethod;
             input.Methods = input.Methods.Where(x => x.Method.GetCustomAttributes().Select(z => z.GetType()).Intersect(types).Count() == 0);
             return item;
@@ -330,21 +424,42 @@ namespace NullRef.FluentReflection
             return item.MissingAttributeAll(typeof(T1), typeof(T2), typeof(T3));
         }
 
+        /// <summary>
+        /// Match methods that return the specified type or a derivation thereof
+        /// </summary>
         public static IAnalysisMethod Returns<T>(this IAnalysisMethod item)
+            => item.Returns(typeof(T));
+
+        /// <summary>
+        /// Match methods that return the specified type or a derivation thereof
+        /// </summary>
+        public static IAnalysisMethod Returns(this IAnalysisMethod item, System.Type type)
         {
             var input = item as AnalysisMethod;
-            input.Methods = input.Methods.Where(x => typeof(T).IsAssignableFrom(x.Method.ReturnType));
+            input.Methods = input.Methods.Where(x => type.IsAssignableFrom(x.Method.ReturnType));
             return item;
         }
 
+        /// <summary>
+        /// Match methods that do not return the specified type or a derivation thereof
+        /// </summary>
         public static IAnalysisMethod DoesNotReturn<T>(this IAnalysisMethod item)
+            => item.DoesNotReturn(typeof(T));
+
+        /// <summary>
+        /// Match methods that do not return the specified type or a derivation thereof
+        /// </summary>
+        public static IAnalysisMethod DoesNotReturn(this IAnalysisMethod item, System.Type type)
         {
             var input = item as AnalysisMethod;
-            input.Methods = input.Methods.Where(x => !typeof(T).IsAssignableFrom(x.Method.ReturnType));
+            input.Methods = input.Methods.Where(x => !type.IsAssignableFrom(x.Method.ReturnType));
             return item;
         }
 
         public static IAnalysisMethod ReturnsTaskOf<T>(this IAnalysisMethod item)
+            => item.ReturnsTaskOf(typeof(T));
+
+        public static IAnalysisMethod ReturnsTaskOf(this IAnalysisMethod item, System.Type type)
         {
             var input = (item as AnalysisMethod);
             input.Methods = input.Methods.Where(x =>
@@ -352,7 +467,7 @@ namespace NullRef.FluentReflection
                                 x.Method.ReturnType.IsGenericType &&
                                 x.Method.ReturnType.GetGenericTypeDefinition() == typeof(System.Threading.Tasks.Task<>) &&
                                 x.Method.ReturnType.GenericTypeArguments.Length == 1 &&
-                                typeof(T).IsAssignableFrom(x.Method.ReturnType.GenericTypeArguments[0]));
+                                type.IsAssignableFrom(x.Method.ReturnType.GenericTypeArguments[0]));
             return input;
         }
 
@@ -360,6 +475,13 @@ namespace NullRef.FluentReflection
         {
             var input = (item as AnalysisMethod);
             input.Methods = input.Methods.Where(x => typeof(System.Threading.Tasks.Task).IsAssignableFrom(x.Method.ReturnType)).ToList();
+            return input;
+        }
+
+        public static IAnalysisMethod DoesNotReturnsTask(this IAnalysisMethod item)
+        {
+            var input = (item as AnalysisMethod);
+            input.Methods = input.Methods.Where(x => !typeof(System.Threading.Tasks.Task).IsAssignableFrom(x.Method.ReturnType)).ToList();
             return input;
         }
 
@@ -372,14 +494,20 @@ namespace NullRef.FluentReflection
             return new AnalysisParameter(item as AnalysisMethod);
         }
 
+        /// <summary>
+        /// Match parameters that have an attribute of the specified type
+        /// </summary>
         public static IAnalysisParameter WithAttribute<T>(this IAnalysisParameter item)
-        where T : System.Attribute
+            where T : System.Attribute
         {
             var input = item as AnalysisParameter;
             input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() != null);
             return item;
         }
 
+        /// <summary>
+        /// Match parameters that have an attribute of the specified type
+        /// </summary>
         public static IAnalysisParameter WithAttribute<T>(this IAnalysisParameter item, Func<T, bool> predicate)
             where T : System.Attribute
         {
@@ -457,39 +585,72 @@ namespace NullRef.FluentReflection
             where T1 : System.Attribute
             where T2 : System.Attribute => item.MissingAttributeAll<T1, T2, T2, T2, T2>();
 
+        /// <summary>
+        /// Match parameters that do not have an attribute of the specified type
+        /// </summary>
         public static IAnalysisParameter MissingAttribute<T>(this IAnalysisParameter item)
-            where T : System.Attribute
+            where T : System.Attribute => item.MissingAttribute(typeof(T));
+
+        /// <summary>
+        /// Match parameters that do not have an attribute of the specified type
+        /// </summary>
+        public static IAnalysisParameter MissingAttribute(this IAnalysisParameter item, System.Type attributeType)
         {
+            attributeType.ThrowIfNotAttribute();
             var input = item as AnalysisParameter;
-            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute<T>() is null);
+            input.Parameters = input.Parameters.Where(x => x.Parameter.GetCustomAttribute(attributeType) is null);
             return item;
         }
 
         public static IAnalysisParameter Is<T>(this IAnalysisParameter item)
+            => item.Is(typeof(T));
+
+        public static IAnalysisParameter Is(this IAnalysisParameter item, System.Type type)
         {
             var input = item as AnalysisParameter;
-            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType == typeof(T));
+            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType == type);
             return item;
         }
 
+        /// <summary>
+        /// Match parameters of the specified type or a derivation thereof
+        /// </summary>
         public static IAnalysisParameter Implements<T>(this IAnalysisParameter item)
+            => item.Implements(typeof(T));
+
+        /// <summary>
+        /// Match parameters of the specified type or a derivation thereof
+        /// </summary>
+        public static IAnalysisParameter Implements(this IAnalysisParameter item, System.Type type)
         {
             var input = item as AnalysisParameter;
-            input.Parameters = input.Parameters.Where(x => typeof(T).IsAssignableFrom(x.Parameter.ParameterType));
+            input.Parameters = input.Parameters.Where(x => type.IsAssignableFrom(x.Parameter.ParameterType));
             return item;
         }
 
+        /// <summary>
+        /// Match parameters that are not of the specified type or a derivation thereof
+        /// </summary>
         public static IAnalysisParameter DoesNotImplement<T>(this IAnalysisParameter item)
+            => item.DoesNotImplement(typeof(T));
+
+        /// <summary>
+        /// Match parameters that are not of the specified type or a derivation thereof
+        /// </summary>
+        public static IAnalysisParameter DoesNotImplement(this IAnalysisParameter item, System.Type type)
         {
             var input = item as AnalysisParameter;
-            input.Parameters = input.Parameters.Where(x => !typeof(T).IsAssignableFrom(x.Parameter.ParameterType));
+            input.Parameters = input.Parameters.Where(x => !type.IsAssignableFrom(x.Parameter.ParameterType));
             return item;
         }
 
         public static IAnalysisParameter IsNot<T>(this IAnalysisParameter item)
+            => item.IsNot(typeof(T));
+
+        public static IAnalysisParameter IsNot(this IAnalysisParameter item, System.Type type)
         {
             var input = item as AnalysisParameter;
-            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType != typeof(T));
+            input.Parameters = input.Parameters.Where(x => x.Parameter.ParameterType != type);
             return item;
         }
 
@@ -530,6 +691,19 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with an exact name
+        /// </summary>
+        public static IAnalysisParameter NameIs(this IAnalysisParameter item, string str)
+        {
+            var input = item as AnalysisParameter;
+            input.Parameters = input.Parameters.Where(x => x.Parameter.Name == str);
+            return item;
+        }
+
+        /// <summary>
+        /// Match parameters with names that contains a sub-string.
+        /// </summary>
         public static IAnalysisParameter NameContains(this IAnalysisParameter item, string str)
         {
             var input = item as AnalysisParameter;
@@ -537,6 +711,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with names that start with a sub-string.
+        /// </summary>
         public static IAnalysisParameter NameStartsWith(this IAnalysisParameter item, string str)
         {
             var input = item as AnalysisParameter;
@@ -544,6 +721,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with names that end with a sub-string.
+        /// </summary>
         public static IAnalysisParameter NameEndsWith(this IAnalysisParameter item, string str)
         {
             var input = item as AnalysisParameter;
@@ -551,6 +731,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with names that do not contain a sub-string.
+        /// </summary>
         public static IAnalysisParameter NameDoesNotContain(this IAnalysisParameter item, string str)
         {
             var input = item as AnalysisParameter;
@@ -558,6 +741,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with names that do not start with a sub-string.
+        /// </summary>
         public static IAnalysisParameter NameDoesNotStartWith(this IAnalysisParameter item, string str)
         {
             var input = item as AnalysisParameter;
@@ -565,6 +751,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with names that do not end with a sub-string.
+        /// </summary>
         public static IAnalysisParameter NameDoesNotEndWith(this IAnalysisParameter item, string str)
         {
             var input = item as AnalysisParameter;
@@ -572,6 +761,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match parameters with types that are an interface
+        /// </summary>
         public static IAnalysisParameter IsInterface(this IAnalysisParameter item, bool value = true)
         {
             var input = item as AnalysisParameter;
@@ -579,6 +771,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Return the declaring parent types on which the filtered set of parameters exist
+        /// </summary>
         public static IAnalysisType DeclaringTypes(this IAnalysisParameter item)
         {
             var input = item as AnalysisParameter;
@@ -599,9 +794,12 @@ namespace NullRef.FluentReflection
         /// Filter properties of a specific type
         /// </summary>
         public static IAnalysisProperty Is<T>(this IAnalysisProperty item)
+            => item.Is(typeof(T));
+
+        public static IAnalysisProperty Is(this IAnalysisProperty item, System.Type type)
         {
             var input = item as AnalysisProperty;
-            input.Properties = input.Properties.Where(x => x.Property.PropertyType == typeof(T));
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType == type);
             return item;
         }
 
@@ -615,17 +813,23 @@ namespace NullRef.FluentReflection
             return item;
         }
 
-        public static IAnalysisProperty NotType<T>(this IAnalysisProperty item)
+        public static IAnalysisProperty DoesNotImplement<T>(this IAnalysisProperty item)
+            => item.DoesNotImplement(typeof(T));
+
+        public static IAnalysisProperty DoesNotImplement(this IAnalysisProperty item, System.Type type)
         {
             var input = item as AnalysisProperty;
-            input.Properties = input.Properties.Where(x => x.Property.PropertyType != typeof(T));
+            input.Properties = input.Properties.Where(x => !type.IsAssignableFrom(x.Property.PropertyType));
             return item;
         }
 
-        public static IAnalysisProperty DoesNotImplement<T>(this IAnalysisProperty item)
+        public static IAnalysisProperty IsNot<T>(this IAnalysisProperty item)
+            => item.IsNot(typeof(T));
+
+        public static IAnalysisProperty IsNot(this IAnalysisProperty item, System.Type type)
         {
             var input = item as AnalysisProperty;
-            input.Properties = input.Properties.Where(x => !typeof(T).IsAssignableFrom(x.Property.PropertyType));
+            input.Properties = input.Properties.Where(x => x.Property.PropertyType != type);
             return item;
         }
 
@@ -640,10 +844,31 @@ namespace NullRef.FluentReflection
         }
 
         /// <summary>
-        /// Filter to only return properties that have a public Set method
+        /// Match only properties that have a public Get method
+        /// </summary>
+        public static IAnalysisProperty IsReadable(this IAnalysisProperty item) => item.IsReadable(true);
+
+        /// <summary>
+        /// Match only properties that have/have not a public Get method based on the specified value
+        /// </summary>
+        public static IAnalysisProperty IsReadable(this IAnalysisProperty item, bool value)
+        {
+            var input = item as AnalysisProperty;
+            if (value)
+                input.Properties = input.Properties.Where(x => x.Property.GetGetMethod() != null);
+            else
+                input.Properties = input.Properties.Where(x => x.Property.GetGetMethod() == null);
+            return item;
+        }
+
+        /// <summary>
+        /// Match only properties that have a public Set method
         /// </summary>
         public static IAnalysisProperty IsWritable(this IAnalysisProperty item) => item.IsWritable(true);
 
+        /// <summary>
+        /// Match only properties that have/have not a public Set method based on the specified value
+        /// </summary>
         public static IAnalysisProperty IsWritable(this IAnalysisProperty item, bool value)
         {
             var input = item as AnalysisProperty;
@@ -717,10 +942,13 @@ namespace NullRef.FluentReflection
         }
 
         public static IAnalysisProperty MissingAttribute<T>(this IAnalysisProperty item)
-           where T : System.Attribute
+           where T : System.Attribute => item.MissingAttribute(typeof(T));
+
+        public static IAnalysisProperty MissingAttribute(this IAnalysisProperty item, System.Type attributeType)
         {
+            attributeType.ThrowIfNotAttribute();
             var input = item as AnalysisProperty;
-            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttribute<T>() is null);
+            input.Properties = input.Properties.Where(x => x.Property.GetCustomAttribute(attributeType) is null);
             return item;
         }
 
@@ -746,6 +974,16 @@ namespace NullRef.FluentReflection
             return item.MissingAttributeAll(typeof(T1), typeof(T2), typeof(T3));
         }
 
+        /// <summary>
+        /// Match parameters with an exact name
+        /// </summary>
+        public static IAnalysisProperty NameIs(this IAnalysisProperty item, string name)
+        {
+            var input = item as AnalysisProperty;
+            input.Properties = input.Properties.Where(x => x.Property.Name == name);
+            return item;
+        }
+
         public static IAnalysisProperty NameIsNot(this IAnalysisProperty item, string name)
         {
             var input = item as AnalysisProperty;
@@ -760,6 +998,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match properties with names that start with a sub-string.
+        /// </summary>
         public static IAnalysisProperty NameStartsWith(this IAnalysisProperty item, string str)
         {
             var input = item as AnalysisProperty;
@@ -767,6 +1008,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match properties with names that end with a sub-string.
+        /// </summary>
         public static IAnalysisProperty NameEndsWith(this IAnalysisProperty item, string str)
         {
             var input = item as AnalysisProperty;
@@ -774,6 +1018,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match properties with names that do not contain a sub-string.
+        /// </summary>
         public static IAnalysisProperty NameDoesNotContain(this IAnalysisProperty item, string str)
         {
             var input = item as AnalysisProperty;
@@ -781,6 +1028,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match properties with names that do not start with a sub-string.
+        /// </summary>
         public static IAnalysisProperty NameDoesNotStartWith(this IAnalysisProperty item, string str)
         {
             var input = item as AnalysisProperty;
@@ -788,6 +1038,9 @@ namespace NullRef.FluentReflection
             return item;
         }
 
+        /// <summary>
+        /// Match properties with names that do not end with a sub-string.
+        /// </summary>
         public static IAnalysisProperty NameDoesNotEndWith(this IAnalysisProperty item, string str)
         {
             var input = item as AnalysisProperty;
@@ -795,7 +1048,12 @@ namespace NullRef.FluentReflection
             return item;
         }
 
-        public static IAnalysisProperty IsNullable(this IAnalysisProperty item, bool value = true)
+        /// <summary>
+        /// Match properties with types that are not nullable
+        /// </summary>
+        public static IAnalysisProperty IsNullable(this IAnalysisProperty item) => item.IsNullable(true);
+
+        public static IAnalysisProperty IsNullable(this IAnalysisProperty item, bool value)
         {
             var input = item as AnalysisProperty;
             input.Properties = input.Properties.Where(x => (Nullable.GetUnderlyingType(x.Property.PropertyType) != null) == value);
@@ -822,9 +1080,12 @@ namespace NullRef.FluentReflection
         /// Filter fields of a specific type
         /// </summary>
         public static IAnalysisField Is<T>(this IAnalysisField item)
+            => item.Is(typeof(T));
+
+        public static IAnalysisField Is(this IAnalysisField item, System.Type type)
         {
             var input = item as AnalysisField;
-            input.Fields = input.Fields.Where(x => x.Field.FieldType == typeof(T));
+            input.Fields = input.Fields.Where(x => x.Field.FieldType == type);
             return item;
         }
 
@@ -838,17 +1099,23 @@ namespace NullRef.FluentReflection
             return item;
         }
 
-        public static IAnalysisField NotType<T>(this IAnalysisField item)
+        public static IAnalysisField DoesNotImplement<T>(this IAnalysisField item)
+            => item.DoesNotImplement(typeof(T));
+
+        public static IAnalysisField DoesNotImplement(this IAnalysisField item, System.Type type)
         {
             var input = item as AnalysisField;
-            input.Fields = input.Fields.Where(x => x.Field.FieldType != typeof(T));
+            input.Fields = input.Fields.Where(x => !type.IsAssignableFrom(x.Field.FieldType));
             return item;
         }
 
-        public static IAnalysisField DoesNotImplement<T>(this IAnalysisField item)
+        public static IAnalysisField IsNot<T>(this IAnalysisField item)
+            => item.IsNot(typeof(T));
+
+        public static IAnalysisField IsNot(this IAnalysisField item, System.Type type)
         {
             var input = item as AnalysisField;
-            input.Fields = input.Fields.Where(x => !typeof(T).IsAssignableFrom(x.Field.FieldType));
+            input.Fields = input.Fields.Where(x => x.Field.FieldType != type);
             return item;
         }
 
@@ -946,33 +1213,37 @@ namespace NullRef.FluentReflection
         }
 
         public static AnalysisValidateResult DoesNotReturnErrors<T>(this IAnalysisMethod item)
+            => item.DoesNotReturnErrors(typeof(T));
+
+        public static AnalysisValidateResult DoesNotReturnErrors(this IAnalysisMethod item, System.Type type)
         {
             var input = item as AnalysisMethod;
             var r = new AnalysisValidateResult
             {
-                Errors = input.Methods.Select(x => new AnalysisError { Text = $"The method {x.Type.Name}.{x.Method.Name} does not return {typeof(T).Name}" }).ToList(),
+                Errors = input.Methods.Select(x => new AnalysisError { Text = $"The method {x.Type.Name}.{x.Method.Name} does not return {type.Name}" }).ToList(),
             };
             return r;
         }
 
         public static AnalysisValidateResult PropertyMissingAttributeErrors<T>(this IAnalysisProperty item)
+            => item.PropertyMissingAttributeErrors(typeof(T));
+
+        public static AnalysisValidateResult PropertyMissingAttributeErrors(this IAnalysisProperty item, System.Type type)
         {
             var input = item as AnalysisProperty;
             var r = new AnalysisValidateResult
             {
-                Errors = input.Properties.Select(x => new AnalysisError { Text = $"The property {x.Type.Name}.{x.Property.Name} is missing attribute {typeof(T).Name}" }).ToList(),
+                Errors = input.Properties.Select(x => new AnalysisError { Text = $"The property {x.Type.Name}.{x.Property.Name} is missing attribute {type.Name}" }).ToList(),
             };
             return r;
         }
 
-        private static void ThrowIfNotType<T>(this System.Type[] types)
-        {
-            var tname = typeof(T).FullName;
-            var typeErrors = types.Where(x => !typeof(T).IsAssignableFrom(x)).Select(x => x.FullName).ToList();
-            if (typeErrors.Any())
-                throw new Exception($"The types are not of type {tname}: " + string.Join(", ", typeErrors));
-        }
-
         public static bool IsNullableEnum(this Type t) => Nullable.GetUnderlyingType(t)?.IsEnum ?? false;
+
+        internal static void ThrowIfNotAttribute(this Type t)
+        {
+            if (!typeof(System.Attribute).IsAssignableFrom(t))
+                throw new InvalidCastException($"'{t.Name}' must be of type System.Attribute.");
+        }
     }
 }

@@ -9,7 +9,7 @@ namespace NullRef.FluentReflection
     {
         internal AnalysisConstructor(AnalysisType item)
         {
-            this.Constructors = item.Types
+            Constructors = item.Types
                 .SelectMany(x => x.GetConstructors());
         }
 

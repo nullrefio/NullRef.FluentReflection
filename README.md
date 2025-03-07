@@ -28,9 +28,9 @@ This unit test gets all types in all loaded assemblies, filters by a specific ty
 [Fact]
 public void Test()
 {
-    var result = allAssemblies
+    var result = GetAllAssemblies()
         .ForAssemblies()
-        .ForType<ModelAllRequiredAttributes>()
+        .Is<ModelAllRequiredAttributes>()
         .Properties()
         .MissingAttribute<RequiredAttribute>();
 
@@ -47,11 +47,11 @@ public void Test()
 {
     var matching = GetAllAssemblies()
         .ForAssemblies()
-        .ImplementsType<ControllerBase>()
-        .Abstract(false)
+        .Implements<ControllerBase>()
+        .IsAbstract(false)
         .Methods()
         .MissingAttribute<SwaggerOperationAttribute>()
-        .ToList();
+        .ToArray();
 
     Assert.Empty(matching);
 }
@@ -65,13 +65,13 @@ This includes `[HttpGet]`, `[HttpPut]`, `[HttpPost]`, `[HttpDelete]`
 [Fact]
 public void Test()
 {
-        var matching = GetAllAssemblies()
-            .ForAssemblies()
-            .ImplementsType<ControllerBase>()
-            .Abstract(false)
-            .Methods()
-            .MissingAttribute<HttpMethodAttribute>()
-            .ToList();
+    var matching = GetAllAssemblies()
+        .ForAssemblies()
+        .Implements<ControllerBase>()
+        .IsAbstract(false)
+        .Methods()
+        .MissingAttribute<HttpMethodAttribute>()
+        .ToArray();
 
     Assert.Empty(matching);
 }
@@ -93,14 +93,14 @@ public class MyController : ControllerBase
 [Fact]
 public void Test()
 {
-        var matching = GetAllAssemblies()
-            .ForAssemblies()
-            .ImplementsType<ControllerBase>()
-            .Abstract(false)
-            .Methods()
-            .Parameters()
-            .MissingAllAttributes<FromBodyAttribute, FromFormAttribute, FromQueryAttribute, FromRouteAttribute, FromServicesAttribute>()
-            .ToList();
+    var matching = GetAllAssemblies()
+        .ForAssemblies()
+        .Implements<ControllerBase>()
+        .IsAbstract(false)
+        .Methods()
+        .Parameters()
+        .MissingAttributeAll<FromBodyAttribute, FromFormAttribute, FromQueryAttribute, FromRouteAttribute, FromServicesAttribute>()
+        .ToArray();
 
     Assert.Empty(matching);
 }
@@ -120,19 +120,19 @@ public class DocumentModel : IModel
 }
 ```
 
-Searching for all properties that are publically writtable should result in 0 items. All properties should have `internal` or `private` setters.
+Searching for all properties that are publicly writable should result in 0 items. All properties should have `internal` or `private` setters.
 
 ```csharp
 [Fact]
 public void Test()
 {
-        var matching = GetAllAssemblies()
-            .ForAssemblies()
-            .ImplementsType<IModel>()
-            .Properties()
-            .WithAttribute<ReadOnlyAttribute>(x => x.IsReadOnly)
-            .IsWritable(true)
-            .ToList();
+    var matching = GetAllAssemblies()
+        .ForAssemblies()
+        .Implements<IModel>()
+        .Properties()
+        .WithAttribute<ReadOnlyAttribute>(x => x.IsReadOnly)
+        .IsWritable(true)
+        .ToArray();
 
     Assert.Empty(matching);
 }
@@ -157,13 +157,13 @@ public class WidgetModel : IModel
 [Fact]
 public void Test()
 {
-        var matching = GetAllAssemblies()
-            .ForAssemblies()
-            .ImplementsType<IModel>()
-            .Properties()
-            .OfType<string>()
-            .MissingAttribute<MaxLengthAttribute>()
-            .ToList();
+    var matching = GetAllAssemblies()
+        .ForAssemblies()
+        .Implements<IModel>()
+        .Properties()
+        .Is<string>()
+        .MissingAttribute<MaxLengthAttribute>()
+        .ToArray();
 
     Assert.Empty(matching);
 }
