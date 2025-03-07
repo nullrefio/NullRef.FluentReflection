@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/nullrefio/NullRef.FluentReflection.git</RepositoryUrl>
     <PackageTags>Fluent Reflection</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.102</Version>
+    <Version>0.1.4</Version>
     <Title>Fluent Reflection</Title>
   </PropertyGroup>
 </Project>
