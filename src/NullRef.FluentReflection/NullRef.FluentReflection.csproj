@@ -13,5 +13,6 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>0.1.4</Version>
     <Title>Fluent Reflection</Title>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 </Project>
