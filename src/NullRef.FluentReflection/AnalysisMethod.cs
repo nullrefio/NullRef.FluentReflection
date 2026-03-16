@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace NullRef.FluentReflection
 {
-    public interface IAnalysisMethod { }
+    public interface IAnalysisMethod
+    {
+        IAnalysisMethod Filter(Func<MatchMethod, bool> predicate);
+    }
 
     internal class AnalysisMethod : IAnalysisMethod
     {
@@ -21,5 +25,11 @@ namespace NullRef.FluentReflection
         }
 
         internal IEnumerable<MatchMethod> Methods { get; set; }
+
+        public IAnalysisMethod Filter(Func<MatchMethod, bool> predicate)
+        {
+            Methods = Methods.Where(predicate);
+            return this;
+        }
     }
 }
