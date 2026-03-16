@@ -1,9 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace NullRef.FluentReflection
 {
-    public interface IAnalysisType { }
+    public interface IAnalysisType
+    {
+        IAnalysisType Filter(Func<System.Type, bool> predicate);
+    }
 
     internal class AnalysisType : IAnalysisType
     {
@@ -20,5 +24,11 @@ namespace NullRef.FluentReflection
         public static AnalysisType Create(IEnumerable<System.Type> types) => new AnalysisType(types);
 
         internal IEnumerable<System.Type> Types { get; set; }
+
+        public IAnalysisType Filter(Func<System.Type, bool> predicate)
+        {
+            Types = Types.Where(predicate);
+            return this;
+        }
     }
 }

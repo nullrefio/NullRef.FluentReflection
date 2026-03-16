@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace NullRef.FluentReflection
 {
-    public interface IAnalysisField { }
+    public interface IAnalysisField
+    {
+        IAnalysisField Filter(Func<MatchField, bool> predicate);
+    }
 
     internal class AnalysisField : IAnalysisField
     {
@@ -15,10 +19,16 @@ namespace NullRef.FluentReflection
             Fields = item.Types
                 .SelectMany(x => x.GetFields(bindingFlags | BindingFlags.Instance))
                 .Where(x => x.FieldType.FullName != null)
-                .Select(x => new MatchField { Type = x.DeclaringType, Field = x });
+                .Select(x => new MatchField { Type = x.ReflectedType, Field = x });
         }
 
         internal IEnumerable<MatchField> Fields { get; set; }
+
+        public IAnalysisField Filter(Func<MatchField, bool> predicate)
+        {
+            Fields = Fields.Where(predicate);
+            return this;
+        }
     }
 
     public interface IAnalysisConst : IAnalysisField { }

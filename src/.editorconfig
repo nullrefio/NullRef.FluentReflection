@@ -13,3 +13,6 @@ indent_size = 2
 [*.{json,yml}]
 indent_size = 2
 
+# Dotnet code style settings:
+[*.{cs,vb}]
+dotnet_diagnostic.CS1591.severity = none

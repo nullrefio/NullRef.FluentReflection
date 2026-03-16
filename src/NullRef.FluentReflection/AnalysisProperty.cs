@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace NullRef.FluentReflection
 {
-    public interface IAnalysisProperty { }
+    public interface IAnalysisProperty
+    {
+        IAnalysisProperty Filter(Func<MatchProperty, bool> predicate);
+    }
 
     internal class AnalysisProperty : IAnalysisProperty
     {
@@ -15,9 +19,15 @@ namespace NullRef.FluentReflection
             Properties = item.Types
                 .SelectMany(x => x.GetProperties(bindingFlags | BindingFlags.Instance))
                 .Where(x => x.PropertyType.FullName != null)
-                .Select(x => new MatchProperty { Type = x.DeclaringType, Property = x });
+                .Select(x => new MatchProperty { Type = x.ReflectedType, Property = x });
         }
 
         internal IEnumerable<MatchProperty> Properties { get; set; }
+
+        public IAnalysisProperty Filter(Func<MatchProperty, bool> predicate)
+        {
+            Properties = Properties.Where(predicate);
+            return this;
+        }
     }
 }
